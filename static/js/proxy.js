@@ -183,4 +183,13 @@
     if (typeof IS_GOAL !== 'undefined' && IS_GOAL && gs && gs.active && gs.hops > 0) {
         setTimeout(showVictory, 200);
     }
+
+    // 활성 게임이 없으면 포기 버튼 → 닫기(홈으로)
+    if (!gs || !gs.active) {
+        const btn = document.querySelector('.rh-btn-danger');
+        if (btn) {
+            btn.textContent = '닫기';
+            btn.onclick = function () { window.location.href = '/'; };
+        }
+    }
 }());
