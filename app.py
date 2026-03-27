@@ -283,14 +283,13 @@ def get_page_html(title: str):
                     try:
                         pg.wait_for_url(
                             lambda u: '__cf_chl' not in u,
-                            timeout=18000,
+                            timeout=20000,
                         )
-                        # CF 통과 후 콘텐츠 로딩 대기
-                        pg.wait_for_load_state('domcontentloaded', timeout=8000)
+                        print(f'[HTML] {title}: CF challenge 통과, 콘텐츠 로딩 대기…', flush=True)
                     except Exception:
                         print(f'[HTML] {title}: CF challenge 미해결', flush=True)
                         return None
-                pg.wait_for_selector('a[href^="/w/"]', timeout=12000)
+                pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
                 html = pg.content()
                 _html_cache[title] = (html, now)
                 print(f'[HTML] {title}: OK {len(html)}B  url={pg.url}', flush=True)
