@@ -293,15 +293,8 @@ def _pw_fetch_wiki(ctx, title: str):
             except Exception:
                 print(f'[PW] {title}: CF 미해결', flush=True)
                 return None
-            # CF 클리어런스 쿠키 획득 후 실제 페이지 재로드
-            pg.goto(url, wait_until='domcontentloaded', timeout=25000)
-            print(f'[PW] {title}: 재로드 완료 → {pg.url}', flush=True)
-        # React SPA 렌더링 대기
-        try:
-            pg.wait_for_load_state('networkidle', timeout=10000)
-        except Exception:
-            pass
-        pg.wait_for_selector('a[href^="/w/"]', timeout=20000)
+        # wait_for_url 후 브라우저는 이미 위키 페이지에 있음 — 바로 selector 대기
+        pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
         html = pg.content()
         print(f'[PW] {title}: OK {len(html)}B', flush=True)
         return html
