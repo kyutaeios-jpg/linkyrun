@@ -589,11 +589,24 @@ def set_wiki_fetcher(fetcher):
     _wiki_fetcher = fetcher
 
 
-def _fetch(url: str, timeout: int = 10):
+_MOBILE_UA = (
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+    'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+)
+_FETCH_HEADERS = {
+    'User-Agent': _MOBILE_UA,
+    'Accept-Language': 'ko-KR,ko;q=0.9',
+    'Accept': 'text/plain, */*',
+    'Referer': 'https://namu.wiki/',
+}
+
+
+def _fetch(url: str, timeout: int = 15):
     if _USE_CURL_CFFI:
-        return cf_requests.get(url, impersonate='chrome124', timeout=timeout)
+        return cf_requests.get(url, impersonate='safari17_0', timeout=timeout,
+                               headers=_FETCH_HEADERS)
     if cf_requests:
-        return cf_requests.get(url, timeout=timeout)
+        return cf_requests.get(url, timeout=timeout, headers=_FETCH_HEADERS)
     raise RuntimeError('no HTTP client available')
 
 
@@ -714,27 +727,15 @@ def page(title):
 
     is_goal = bool(goal) and title.strip() == goal.strip()
 
-    # 1차: 전체 HTML 프록시 (Playwright, CF 우회 성공 시)
-    if _wiki_fetcher is None:
-        html = get_page_html(title)
-        if html is not None:
-            return build_proxy_html(html, title, goal), 200, \
-                   {'Content-Type': 'text/html; charset=utf-8'}
-
-    # 2차: namumark 렌더링 (curl_cffi → /raw/ 엔드포인트, 안정적)
-    raw_content = None
-    if _wiki_fetcher is not None:
-        raw_content = _wiki_fetcher(title)
-    else:
-        raw_content = get_raw_content(title)
-
+    # 1차: namumark 렌더링 (requests → /raw/ 엔드포인트, CF 영향 없음)
+    raw_content = _wiki_fetcher(title) if _wiki_fetcher is not None else get_raw_content(title)
     if raw_content is not None:
         rendered = render_namumark(raw_content, title, goal)
         return render_template('wiki.html',
                                title=title, content=rendered,
                                goal=goal, is_goal=is_goal)
 
-    # 3차 폴백: 링크 목록 UI
+    # 2차: 링크 목록 UI 폴백
     links = get_page_links(title) or []
     error = not links
     status = 404 if error else 200
