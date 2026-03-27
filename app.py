@@ -627,8 +627,34 @@ def _warmup_loop():
 threading.Thread(target=_warmup_loop, daemon=True).start()
 
 
+WORKER_URL   = os.environ.get('WORKER_URL', 'https://linkyrun-proxy.linkyrun.workers.dev/')
+WORKER_TOKEN = os.environ.get('WORKER_TOKEN', 'linkyrun-worker-secret-2024')
+
+
+def _worker_fetch_namu(title: str):
+    """Cloudflare Worker를 통해 namu.wiki 페이지 HTML 반환."""
+    import urllib.request, urllib.parse
+    params = urllib.parse.urlencode({'token': WORKER_TOKEN, 'title': title})
+    url = WORKER_URL + '?' + params
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'LinkyRun/1.0'})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            html = r.read().decode('utf-8', errors='replace')
+            status = r.status
+            print(f'[Worker:namu] {title}: {status} {len(html)}B', flush=True)
+            if status != 200 or len(html) < 1000:
+                return None
+            if 'Just a moment' in html or '보안 확인' in html:
+                print(f'[Worker:namu] {title}: CF 챌린지 수신', flush=True)
+                return None
+            return html
+    except Exception as e:
+        print(f'[Worker:namu] {title}: 에러 {e}', flush=True)
+        return None
+
+
 def get_page_html(title: str, wiki: str = 'namu'):
-    """Playwright 전용 스레드를 통해 위키 전체 페이지 HTML 반환."""
+    """위키 페이지 HTML 반환 — namu는 Worker, 나머지는 Playwright."""
     cache_key = f'{wiki}:{title}'
     now = _time.time()
     if cache_key in _html_cache:
@@ -636,13 +662,14 @@ def get_page_html(title: str, wiki: str = 'namu'):
         if now - ts < CACHE_TTL:
             return html
 
+    if wiki == 'namu':
+        html = _worker_fetch_namu(title)
+        if html:
+            _html_cache[cache_key] = (html, _time.time())
+        return html
+
     def _fetch(ctx):
         html = _pw_fetch_wiki(ctx, title, wiki)
-        if html is None and wiki == 'namu':
-            # CF 클리어런스 만료 가능성 — 재워밍업 후 1회 재시도
-            print(f'[PW] {title}: 로드 실패, 재워밍업 후 재시도…', flush=True)
-            _do_warmup(ctx)
-            html = _pw_fetch_wiki(ctx, title, wiki)
         if html:
             _html_cache[cache_key] = (html, _time.time())
         return html
