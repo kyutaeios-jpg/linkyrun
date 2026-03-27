@@ -209,7 +209,7 @@ CACHE_TTL = 600           # 10분
 
 
 def _get_pw_context():
-    """Playwright persistent context 초기화 (CF 쿠키 유지)."""
+    """Playwright persistent context 초기화 — 모바일 Safari UA로 CF 우회."""
     global _pw_instance, _pw_browser, _pw_context
     if _pw_context is not None:
         return _pw_context
@@ -223,24 +223,23 @@ def _get_pw_context():
                 '--no-sandbox', '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-blink-features=AutomationControlled',
-                '--window-size=1280,800',
             ],
+            # 모바일 Safari로 위장 (Gemini 권고)
             user_agent=(
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                'AppleWebKit/537.36 (KHTML, like Gecko) '
-                'Chrome/124.0.0.0 Safari/537.36'
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+                'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+                'Version/17.0 Mobile/15E148 Safari/604.1'
             ),
+            is_mobile=True,
+            has_touch=True,
             locale='ko-KR',
             timezone_id='Asia/Seoul',
-            viewport={'width': 1280, 'height': 800},
+            viewport={'width': 390, 'height': 844},
             extra_http_headers={
-                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-                'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
+                'Accept-Language': 'ko-KR,ko;q=0.9',
             },
         )
-        print('[Playwright] persistent context initialized', flush=True)
+        print('[Playwright] persistent context initialized (mobile Safari)', flush=True)
     except Exception as e:
         print(f'[Playwright] init error: {e}', flush=True)
         _pw_instance = None
@@ -278,10 +277,23 @@ def get_page_html(title: str):
                     f'https://namu.wiki/w/{quote(title)}',
                     wait_until='domcontentloaded', timeout=30000,
                 )
-                pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+                # CF 챌린지 감지 → 해결될 때까지 대기
+                if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
+                    print(f'[HTML] {title}: CF challenge 감지, 대기 중…', flush=True)
+                    try:
+                        pg.wait_for_url(
+                            lambda u: '__cf_chl' not in u,
+                            timeout=18000,
+                        )
+                        # CF 통과 후 콘텐츠 로딩 대기
+                        pg.wait_for_load_state('domcontentloaded', timeout=8000)
+                    except Exception:
+                        print(f'[HTML] {title}: CF challenge 미해결', flush=True)
+                        return None
+                pg.wait_for_selector('a[href^="/w/"]', timeout=12000)
                 html = pg.content()
                 _html_cache[title] = (html, now)
-                print(f'[HTML] {title}: {len(html)}B', flush=True)
+                print(f'[HTML] {title}: OK {len(html)}B  url={pg.url}', flush=True)
                 return html
             finally:
                 pg.close()
@@ -613,23 +625,60 @@ def _fetch(url: str, timeout: int = 15):
 # ── 나무위키 fetching ──────────────────────────────────────────
 
 def get_raw_content(title):
+    """namumark 원문 반환: requests 우선, Playwright /raw/ 폴백."""
     if _wiki_fetcher is not None:
         return _wiki_fetcher(title)
+
     url = NAMUWIKI_RAW_URL + quote(title)
+
+    # 1차: requests (빠름, IP 블록 시 403)
     try:
         response = _fetch(url)
-        if response.status_code != 200:
-            print(f'[Raw] {title}: HTTP {response.status_code}', flush=True)
-            return None
-        text = response.text
-        if text.strip().lower().startswith(('<!doctype', '<html')):
-            print(f'[Raw] {title}: CF 차단 (HTML 응답)', flush=True)
-            return None
-        print(f'[Raw] {title}: OK ({len(text)}B)', flush=True)
-        return text
+        if response.status_code == 200:
+            text = response.text
+            if not text.strip().lower().startswith(('<!doctype', '<html')):
+                print(f'[Raw] {title}: OK ({len(text)}B)', flush=True)
+                return text
+        print(f'[Raw] {title}: HTTP {response.status_code}', flush=True)
     except Exception as e:
-        print(f'[Raw] {title}: 에러 {e}', flush=True)
-        return None
+        print(f'[Raw] {title}: requests 에러 {e}', flush=True)
+
+    # 2차: Playwright로 /raw/ 직접 요청 (실제 브라우저 → CF 우회)
+    with _pw_lock:
+        try:
+            ctx = _get_pw_context()
+            if ctx is None:
+                return None
+            pg = ctx.new_page()
+            try:
+                try:
+                    from playwright_stealth import stealth_sync
+                    stealth_sync(pg)
+                except ImportError:
+                    pass
+                pg.goto(url, wait_until='domcontentloaded', timeout=20000)
+                # CF 챌린지 대기
+                if '__cf_chl' in pg.url or 'just a moment' in pg.title().lower():
+                    try:
+                        pg.wait_for_url(
+                            lambda u: '__cf_chl' not in u,
+                            timeout=15000,
+                        )
+                    except Exception:
+                        return None
+                content = pg.inner_text('body').strip()
+                if content and not content.lower().startswith(
+                    ('<!doctype', '<html', 'just a moment')
+                ):
+                    print(f'[Raw-PW] {title}: OK ({len(content)}B)', flush=True)
+                    return content
+                return None
+            finally:
+                pg.close()
+        except Exception as e:
+            print(f'[Raw-PW] {title}: {e}', flush=True)
+            _pw_context = None
+            return None
 
 
 def get_backlink_count(title: str):
@@ -729,17 +778,14 @@ def page(title):
     title = unquote(title)
     goal  = request.args.get('goal', '')
 
-    is_goal = bool(goal) and title.strip() == goal.strip()
-
-    # 1차: namumark 렌더링 (requests → /raw/ 엔드포인트, CF 영향 없음)
-    raw_content = _wiki_fetcher(title) if _wiki_fetcher is not None else get_raw_content(title)
-    if raw_content is not None:
-        rendered = render_namumark(raw_content, title, goal)
-        return render_template('wiki.html',
-                               title=title, content=rendered,
-                               goal=goal, is_goal=is_goal)
+    # 1차: Playwright 전체 HTML 프록시
+    wiki_html = get_page_html(title)
+    if wiki_html:
+        proxy_html = build_proxy_html(wiki_html, title, goal)
+        return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
     # 2차: 링크 목록 UI 폴백
+    is_goal = bool(goal) and title.strip() == goal.strip()
     links = get_page_links(title) or []
     error = not links
     status = 404 if error else 200
@@ -879,6 +925,19 @@ def api_health():
 
     return jsonify(status)
 
+
+def _warmup():
+    """서버 시작 시 CF 클리어런스 쿠키를 미리 확보하기 위한 워밍업."""
+    _time.sleep(3)  # 서버 완전 기동 대기
+    print('[Warmup] CF 클리어런스 워밍업 시작…', flush=True)
+    result = get_page_html('대한민국')
+    if result:
+        print(f'[Warmup] 완료: {len(result)}B', flush=True)
+    else:
+        print('[Warmup] 실패 (CF 차단 가능성)', flush=True)
+
+
+threading.Thread(target=_warmup, daemon=True).start()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
