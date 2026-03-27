@@ -60,16 +60,36 @@
     }
 
     window.rhGiveUp = function () {
-        if (!confirm('게임을 포기하시겠습니까?')) return;
-        const goal = gs ? gs.goal : null;
-        const wiki = gs ? (gs.wiki || 'namu') : 'namu';
+        const modal = document.getElementById('rh-giveup-modal');
+        if (!modal) return;
+        const goalBtn = document.getElementById('rh-gu-btn-goal');
+        if (goalBtn) {
+            const goalName = (gs && gs.goal) || (typeof GOAL !== 'undefined' ? GOAL : '');
+            goalBtn.textContent = goalName ? `목표 페이지로 이동 (${goalName})` : '목표 페이지로 이동';
+        }
+        modal.classList.remove('rh-hidden');
+    };
+
+    window.rhGiveUpGoal = function () {
+        const goal = gs ? gs.goal : (typeof GOAL !== 'undefined' ? GOAL : null);
+        const wiki = gs ? (gs.wiki || 'namu') : (typeof WIKI !== 'undefined' ? WIKI : 'namu');
         clear();
-        if (goal && confirm(`목표 페이지 "${goal}"로 이동하시겠습니까?\n취소: 홈으로 이동`)) {
+        if (goal) {
             window.location.href =
                 `/page/${encodeURIComponent(goal)}?goal=${encodeURIComponent(goal)}&wiki=${encodeURIComponent(wiki)}`;
         } else {
             window.location.href = '/';
         }
+    };
+
+    window.rhGiveUpHome = function () {
+        clear();
+        window.location.href = '/';
+    };
+
+    window.rhGiveUpCancel = function () {
+        const modal = document.getElementById('rh-giveup-modal');
+        if (modal) modal.classList.add('rh-hidden');
     };
 
     function showVictory() {

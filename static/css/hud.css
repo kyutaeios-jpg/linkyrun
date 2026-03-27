@@ -168,3 +168,46 @@
     background: rgba(139, 92, 246, 0.12);
     color: var(--rh-text); border: 1px solid var(--rh-border);
 }
+
+/* ── 포기 확인 모달 ─────────────────────────────── */
+#rh-giveup-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+}
+#rh-giveup-modal.rh-hidden { display: none; }
+.rh-gu-card {
+    background: var(--rh-bg-card);
+    border: 1px solid var(--rh-border);
+    border-radius: 16px;
+    padding: 28px 24px 20px;
+    width: min(320px, 90vw);
+    display: flex; flex-direction: column; gap: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.rh-gu-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--rh-text); text-align: center; line-height: 1.4;
+}
+.rh-gu-actions {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.rh-gu-btn {
+    width: 100%; padding: 13px 16px;
+    border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: opacity 0.15s;
+}
+.rh-gu-btn:active { opacity: 0.75; }
+.rh-gu-btn-goal {
+    background: var(--rh-primary); color: white;
+}
+.rh-gu-btn-home {
+    background: rgba(139,92,246,0.12);
+    color: var(--rh-text); border: 1px solid var(--rh-border);
+}
+.rh-gu-btn-cancel {
+    background: transparent;
+    color: var(--rh-muted); border: 1px solid var(--rh-border);
+}

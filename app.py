@@ -611,6 +611,17 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
   <div id="rh-path-content"><span class="rh-path-item">이동 경로 없음</span></div>
 </div>
 
+<div id="rh-giveup-modal" class="rh-hidden">
+  <div class="rh-gu-card">
+    <div class="rh-gu-title">게임을 포기하시겠습니까?</div>
+    <div class="rh-gu-actions">
+      <button class="rh-gu-btn rh-gu-btn-goal" id="rh-gu-btn-goal" onclick="rhGiveUpGoal()"></button>
+      <button class="rh-gu-btn rh-gu-btn-home" onclick="rhGiveUpHome()">홈으로 이동</button>
+      <button class="rh-gu-btn rh-gu-btn-cancel" onclick="rhGiveUpCancel()">아니오</button>
+    </div>
+  </div>
+</div>
+
 <div id="rh-victory" style="display:none">
   <div class="rh-v-card">
     <div class="rh-v-icon">🎉</div>
