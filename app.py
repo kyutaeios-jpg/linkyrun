@@ -532,6 +532,17 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
             except Exception:
                 print(f'[PW:{wiki}] {title}: CF 미해결', flush=True)
                 return None
+        # CF 챌린지가 아직 남아있는지 한 번 더 확인
+        cur_url = pg.url
+        cur_title = (pg.title() or '').lower()
+        if '__cf_chl' in cur_url or 'just a moment' in cur_title or '보안 확인' in cur_title:
+            print(f'[PW:{wiki}] {title}: CF 재감지, 추가 대기…', flush=True)
+            try:
+                pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=25000)
+            except Exception:
+                print(f'[PW:{wiki}] {title}: CF 최종 미해결', flush=True)
+                return None
+
         # 링크 셀렉터 대기 — 실패해도 페이지 내용은 반환
         try:
             pg.wait_for_selector(cfg['link_selector'], timeout=15000)
@@ -541,6 +552,13 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
                 pg.wait_for_selector('body', timeout=8000)
             except Exception:
                 pass
+
+        # 최종적으로 CF 페이지면 None 반환
+        final_title = (pg.title() or '').lower()
+        if 'just a moment' in final_title or '보안 확인' in final_title:
+            print(f'[PW:{wiki}] {title}: CF 해제 실패, None 반환', flush=True)
+            return None
+
         html = pg.content()
         print(f'[PW:{wiki}] {title}: OK {len(html)}B', flush=True)
         return html
