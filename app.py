@@ -655,21 +655,38 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 
     # 3. 내부 위키 링크 → 프록시 경로 (제외 접두사는 원본 URL로 유지)
     wp_excluded = cfg.get('wp_excluded', [])
+    escaped_prefix = re.escape(prefix)
+    escaped_host   = re.escape(host)
+
     def rewrite_link(m):
-        raw  = m.group(1)
+        raw  = m.group(2)  # /w/... 또는 /wiki/... 부분
+        quote_char = m.group(1)
         part = raw[len(prefix):].split('#')[0].split('?')[0]
         decoded = unquote(part)
-        # 제외 접두사(분류:, 틀:, 파일: 등)는 프록시 안 함
         if any(decoded.startswith(p) for p in EXCLUDED_PREFIXES + wp_excluded):
-            return f'href="https://{host}{raw}" target="_blank" rel="noopener"'
-        return f'href="/page/{part}?goal={goal_enc}&wiki={wiki_enc}"'
-    escaped_prefix = re.escape(prefix)
-    html = re.sub(rf'href="({escaped_prefix}[^"]*)"', rewrite_link, html)
+            return f'href={quote_char}https://{host}{raw}{quote_char} target="_blank" rel="noopener"'
+        return f'href={quote_char}/page/{part}?goal={goal_enc}&wiki={wiki_enc}{quote_char}'
+
+    # 상대 경로 링크: href="/w/..." 또는 href='/w/...'
+    html = re.sub(
+        rf'href=(["\'])({escaped_prefix}[^"\']*)\1',
+        rewrite_link, html
+    )
+    # 절대 경로 링크: href="https://namu.wiki/w/..." (PC 버전에서 제공)
+    html = re.sub(
+        rf'href=(["\'])https?://{escaped_host}({escaped_prefix}[^"\']*)\1',
+        rewrite_link, html
+    )
 
     # 4. 나머지 상대 URL → 절대 URL (protocol-relative // 제외, /page/ 제외)
     html = re.sub(
         r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
         lambda m: f'{m.group(1)}="https://{host}{m.group(2)}"',
+        html,
+    )
+    html = re.sub(
+        r"(href|src)='(\/(?!\/|page\/)[^']*)'",
+        lambda m: f"{m.group(1)}='https://{host}{m.group(2)}'",
         html,
     )
 
