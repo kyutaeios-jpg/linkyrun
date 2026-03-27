@@ -142,6 +142,41 @@ PAGES_BY_DIFFICULTY = {
 }
 
 
+# 자동완성용 전체 페이지 풀 (난이도 풀 + 인기 페이지 + 추가)
+_extra_pages = [
+    "삼성전자", "LG전자", "현대자동차", "카카오", "네이버", "쿠팡",
+    "손흥민", "류현진", "김연아", "박지성", "이강인", "류준열",
+    "뉴진스", "에스파", "르세라핌", "아이브", "세븐틴", "스트레이 키즈",
+    "트와이스", "레드벨벳", "소녀시대", "샤이니", "엑소", "방탄소년단",
+    "기생충", "오징어 게임", "이상한 변호사 우영우", "무빙",
+    "어벤져스", "인터스텔라", "타이타닉", "조커",
+    "닌텐도", "플레이스테이션", "Xbox",
+    "리그 오브 레전드", "오버워치", "배틀그라운드", "발로란트", "로블록스",
+    "원피스", "나루토", "드래곤볼", "귀멸의 칼날", "진격의 거인",
+    "슬램덩크", "헌터X헌터", "강철의 연금술사", "도라에몽",
+    "서울대학교", "연세대학교", "고려대학교", "카이스트", "포스텍",
+    "소주", "맥주", "막걸리", "와인", "커피", "녹차",
+    "불교", "기독교", "이슬람교", "힌두교", "유교",
+    "테슬라", "SpaceX", "아마존", "메타", "마이크로소프트", "애플",
+    "COVID-19", "인플루엔자", "암", "당뇨병",
+    "영어", "중국어", "일본어", "스페인어", "프랑스어", "독일어",
+    "피카소", "고흐", "모네", "미켈란젤로",
+    "도쿄", "오사카", "베이징", "상하이", "뉴욕", "런던", "파리", "로마",
+    "히말라야", "알프스산맥", "태평양", "대서양", "지중해",
+    "공룡", "호랑이", "사자", "코끼리", "판다", "펭귄", "돌고래",
+    "수소", "산소", "탄소", "금", "은", "철",
+    "민주주의", "공산주의", "자본주의", "사회주의",
+    "세계대전", "냉전", "십자군", "몽골 제국",
+    "셰익스피어", "괴테", "톨스토이", "도스토예프스키",
+    "모차르트", "베토벤", "쇼팽", "드뷔시",
+    "축구", "야구", "농구", "배구", "테니스", "골프", "수영",
+    "올림픽", "월드컵", "NBA", "MLB", "EPL",
+]
+ALL_PAGES = sorted(set(POPULAR_PAGES) |
+                   {p for v in PAGES_BY_DIFFICULTY.values() for p in v} |
+                   set(_extra_pages))
+
+
 # ── DB 초기화 ─────────────────────────────────────────────────
 
 def init_db():
@@ -172,41 +207,64 @@ CACHE_TTL = 600           # 10분
 
 
 def _get_pw_context():
-    """Playwright 컨텍스트 레이지 초기화 (프로세스 당 1개)."""
+    """Playwright persistent context 초기화 (CF 쿠키 유지)."""
     global _pw_instance, _pw_browser, _pw_context
     if _pw_context is not None:
         return _pw_context
     try:
         from playwright.sync_api import sync_playwright
         _pw_instance = sync_playwright().start()
-        _pw_browser  = _pw_instance.chromium.launch(
+        _pw_context = _pw_instance.chromium.launch_persistent_context(
+            user_data_dir='/tmp/rabbit-hole-pw',
             headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox',
-                  '--disable-dev-shm-usage', '--single-process'],
-        )
-        _pw_context = _pw_browser.new_context(
+            args=[
+                '--no-sandbox', '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-blink-features=AutomationControlled',
+                '--window-size=1280,800',
+            ],
             user_agent=(
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                 'AppleWebKit/537.36 (KHTML, like Gecko) '
                 'Chrome/124.0.0.0 Safari/537.36'
             ),
             locale='ko-KR',
+            timezone_id='Asia/Seoul',
             viewport={'width': 1280, 'height': 800},
+            extra_http_headers={
+                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+                'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+            },
         )
+        print('[Playwright] persistent context initialized', flush=True)
     except Exception as e:
-        print(f'[Playwright] init error: {e}')
-        _pw_context = None
+        print(f'[Playwright] init error: {e}', flush=True)
+        _pw_instance = None
+        _pw_browser  = None
+        _pw_context  = None
     return _pw_context
 
 
 def get_page_links(title: str):
-    """Playwright로 나무위키 /w/{title} 렌더링 후 내부 링크 추출."""
+    """나무위키 링크 추출: raw 엔드포인트 우선, Playwright 폴백."""
     now = _time.time()
     if title in _links_cache:
         links, ts = _links_cache[title]
         if now - ts < CACHE_TTL:
             return links
 
+    # 1차: /raw/ 엔드포인트 (curl_cffi CF 우회, 빠름)
+    content = get_raw_content(title)
+    if content is not None:
+        links = parse_internal_links(content)
+        if links:
+            _links_cache[title] = (links, now)
+            print(f'[Raw] {title}: {len(links)}개', flush=True)
+            return links
+
+    # 2차: Playwright 폴백
     with _pw_lock:
         try:
             ctx = _get_pw_context()
@@ -214,14 +272,22 @@ def get_page_links(title: str):
                 return None
             page = ctx.new_page()
             try:
-                page.add_init_script(
-                    'Object.defineProperty(navigator,"webdriver",{get:()=>undefined})'
-                )
+                try:
+                    from playwright_stealth import stealth_sync
+                    stealth_sync(page)
+                except ImportError:
+                    page.add_init_script("""
+                        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                        Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+                        Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
+                        window.chrome = {runtime: {}};
+                    """)
                 page.goto(
                     f'https://namu.wiki/w/{quote(title)}',
-                    wait_until='domcontentloaded', timeout=15000,
+                    wait_until='domcontentloaded', timeout=30000,
                 )
-                page.wait_for_selector('a[href^="/w/"]', timeout=12000)
+                print(f'[Playwright] loaded: {page.url}', flush=True)
+                page.wait_for_selector('a[href^="/w/"]', timeout=25000)
 
                 raw = page.eval_on_selector_all(
                     'a[href^="/w/"]',
@@ -251,7 +317,8 @@ def get_page_links(title: str):
             finally:
                 page.close()
         except Exception as e:
-            print(f'[Playwright] {title}: {e}')
+            print(f'[Playwright] {title}: {e}', flush=True)
+            _pw_context = None  # 다음 호출 시 재초기화
             return None
 
 
@@ -369,7 +436,18 @@ def encode_uri_filter(s):
 
 @app.route('/')
 def index():
-    return render_template('index.html', presets=PRESET_CHALLENGES)
+    return render_template('index.html', presets=PRESET_CHALLENGES,
+                           all_pages=json.dumps(ALL_PAGES, ensure_ascii=False))
+
+
+@app.route('/api/search')
+def api_search():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'pages': []})
+    q_lower = q.lower()
+    results = [p for p in ALL_PAGES if q_lower in p.lower()][:12]
+    return jsonify({'pages': results})
 
 
 @app.route('/page/<path:title>')

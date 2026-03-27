@@ -1,12 +1,12 @@
 {
-    "name": "나무위키 스피드런",
-    "short_name": "나무스피드런",
-    "description": "나무위키 내부 링크만 클릭해서 목표 페이지에 최단 시간에 도달하는 게임",
+    "name": "Rabbit Hole",
+    "short_name": "Rabbit Hole",
+    "description": "나무위키 링크를 타고 목표 페이지까지 도달하는 게임",
     "start_url": "/",
     "display": "standalone",
     "orientation": "any",
-    "background_color": "#0d1117",
-    "theme_color": "#00b894",
+    "background_color": "#0a0812",
+    "theme_color": "#8b5cf6",
     "lang": "ko",
     "categories": ["games", "entertainment"],
     "icons": [
