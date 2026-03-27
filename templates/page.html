@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ ver }}">
 </head>
 <body class="game-page">
 
@@ -140,6 +140,6 @@
         const GOAL       = {{ goal  | tojson }};
         const IS_GOAL    = {{ is_goal | tojson }};
     </script>
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v={{ ver }}"></script>
 </body>
 </html>

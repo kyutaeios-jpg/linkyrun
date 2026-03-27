@@ -26,6 +26,18 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'namu-speedrun-secret-key-2024')
 
+import subprocess as _subprocess
+try:
+    _APP_VER = _subprocess.check_output(
+        ['git', 'rev-parse', '--short', 'HEAD'], stderr=_subprocess.DEVNULL
+    ).decode().strip()
+except Exception:
+    import time as _t; _APP_VER = str(int(_t.time()))
+
+@app.context_processor
+def _inject_version():
+    return {'ver': _APP_VER}
+
 NAMUWIKI_RAW_URL = "https://namu.wiki/raw/"
 DB_PATH = os.environ.get(
     'DB_PATH',
@@ -719,7 +731,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     w_json  = json.dumps(wiki)
 
     inject = f'''
-<link rel="stylesheet" href="/static/css/hud.css">
+<link rel="stylesheet" href="/static/css/hud.css?v={_APP_VER}">
 <div id="rh-pad"></div>
 <header id="rh-hud">
   <div class="rh-hud-left">
@@ -797,7 +809,7 @@ const GOAL       = {g_json};
 const IS_GOAL    = {ig_json};
 const WIKI       = {w_json};
 </script>
-<script src="/static/js/proxy.js"></script>
+<script src="/static/js/proxy.js?v={_APP_VER}"></script>
 '''
 
     if '</body>' in html:
