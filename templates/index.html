@@ -268,7 +268,7 @@
                 card.disabled = true;
             }
             try {
-                const res  = await fetch(`/api/random-game?difficulty=${difficulty}`);
+                const res  = await fetch(`/api/random-game?difficulty=${difficulty}&wiki=${encodeURIComponent(selectedWiki)}`);
                 const data = await res.json();
                 await launchGame(data.start, data.goal, difficulty);
             } catch (e) {
@@ -334,9 +334,8 @@
             const el = document.getElementById('lb-content');
             el.innerHTML = '<div class="lb-loading">불러오는 중…</div>';
             try {
-                const url = difficulty
-                    ? `/api/ranking?difficulty=${encodeURIComponent(difficulty)}&limit=20`
-                    : '/api/ranking?limit=20';
+                let url = `/api/ranking?wiki=${encodeURIComponent(selectedWiki)}&limit=20`;
+                if (difficulty) url += `&difficulty=${encodeURIComponent(difficulty)}`;
                 const data = await fetch(url).then(r => r.json());
 
                 if (!data.rankings?.length) {
@@ -376,9 +375,6 @@
                     document.querySelectorAll('.wiki-card').forEach(c => c.classList.remove('wiki-card-active'));
                     card.classList.add('wiki-card-active');
                     selectedWiki = card.dataset.wiki;
-                    // 나무위키가 아닌 경우 랜덤 게임 숨김
-                    const randomSection = document.querySelector('.diff-grid')?.closest('.card');
-                    if (randomSection) randomSection.style.display = selectedWiki === 'namu' ? '' : 'none';
                 });
             });
             document.getElementById('btn-wiki-next').addEventListener('click', () => showScreen('screen-intro'));

@@ -104,12 +104,14 @@
                 body: JSON.stringify({
                     nickname: nick, start: gs.start, goal: gs.goal,
                     elapsed_ms: Math.round(elapsed), hops: gs.hops,
-                    path: gs.path, difficulty: gs.difficulty || 'unknown'
+                    path: gs.path, difficulty: gs.difficulty || 'unknown',
+                    wiki: gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu')
                 })
             });
             const d = await res.json();
             if (!d.ok) throw new Error(d.error);
-            const rk = await fetch(`/api/ranking?difficulty=${encodeURIComponent(gs.difficulty || '')}&limit=50`).then(r => r.json());
+            const wikiParam = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+            const rk = await fetch(`/api/ranking?wiki=${encodeURIComponent(wikiParam)}&difficulty=${encodeURIComponent(gs.difficulty || '')}&limit=50`).then(r => r.json());
             const rank = rk.rankings.findIndex(r => r.id === d.id) + 1;
             const row = document.getElementById('rh-rank-row');
             const re = document.getElementById('rh-rank-result');

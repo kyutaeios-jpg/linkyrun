@@ -88,6 +88,132 @@ WIKI_CONFIGS = {
     },
 }
 
+# ── Wikipedia 위키별 난이도 페이지 풀 ──────────────────────────
+WIKI_PAGES_BY_DIFFICULTY = {
+    'ko': {
+        'easy': [
+            "대한민국", "서울", "일본", "미국", "중국", "영국", "프랑스", "독일",
+            "수학", "물리학", "화학", "생물학", "음악", "영화", "축구", "야구",
+            "농구", "올림픽", "인터넷", "컴퓨터", "고양이", "개",
+            "나폴레옹", "아인슈타인", "셰익스피어", "피자", "커피",
+        ],
+        'medium': [
+            "부산", "인천", "대구", "광주", "대전", "조선", "고려", "신라",
+            "세종대왕", "이순신", "임진왜란", "한국전쟁", "3·1 운동",
+            "태권도", "바둑", "기후변화", "인공지능", "블랙홀", "화성",
+            "모차르트", "베토벤", "다윈", "뉴턴", "진화", "빅뱅",
+        ],
+        'hard': [
+            "경복궁", "훈민정음", "팔만대장경", "거북선", "광개토왕",
+            "발해", "가야", "동학 농민 운동", "병자호란", "강화도 조약",
+            "허준", "정약용", "판소리", "가야금",
+            "바이킹", "십자군 전쟁", "몽골 제국", "오스만 제국",
+        ],
+        'very_hard': [
+            "성리학", "실학", "공민왕", "을사조약", "신미양요",
+            "양자역학", "열역학", "위상수학", "분자생물학", "유전공학",
+            "임마누엘 칸트", "게오르크 헤겔", "플라톤", "아리스토텔레스",
+        ],
+    },
+    'en': {
+        'easy': [
+            "United States", "Japan", "China", "United Kingdom", "France", "Germany",
+            "Mathematics", "Physics", "Chemistry", "Biology", "Music", "Film",
+            "Football", "Basketball", "Olympics", "Internet", "Computer",
+            "Cat", "Dog", "Pizza", "Coffee", "Albert Einstein", "Napoleon",
+        ],
+        'medium': [
+            "World War II", "World War I", "Cold War", "French Revolution",
+            "Industrial Revolution", "Solar System", "Black hole", "Evolution",
+            "Climate change", "Artificial intelligence", "Quantum mechanics",
+            "Democracy", "Capitalism", "Socialism", "Buddhism", "Islam",
+        ],
+        'hard': [
+            "Byzantine Empire", "Mongol Empire", "Ottoman Empire", "Roman Republic",
+            "Renaissance", "Age of Enlightenment", "American Civil War",
+            "Plate tectonics", "Periodic table", "DNA", "Photosynthesis",
+            "Immanuel Kant", "Plato", "Aristotle", "Sigmund Freud",
+        ],
+        'very_hard': [
+            "Scholasticism", "Neoplatonism", "Stoicism", "Empiricism",
+            "Topology", "Number theory", "Complex analysis", "Thermodynamics",
+            "Electromagnetism", "Standard Model", "General relativity",
+            "Anthropology", "Epistemology", "Phenomenology",
+        ],
+    },
+    'de': {
+        'easy': [
+            "Deutschland", "Berlin", "Bayern", "Hamburg", "Österreich", "Schweiz",
+            "Mathematik", "Physik", "Chemie", "Musik", "Film", "Fußball",
+            "Olympische Spiele", "Internet", "Computer", "Katze", "Hund",
+            "Albert Einstein", "Napoleon Bonaparte", "Beethoven", "Mozart",
+        ],
+        'medium': [
+            "Zweiter Weltkrieg", "Erster Weltkrieg", "Kalter Krieg",
+            "Französische Revolution", "Industrielle Revolution",
+            "Sonnensystem", "Schwarzes Loch", "Evolution", "Klimawandel",
+            "Demokratie", "Kapitalismus", "Buddhismus", "Islam",
+        ],
+        'hard': [
+            "Byzantinisches Reich", "Osmanisches Reich", "Römische Republik",
+            "Renaissance", "Aufklärung", "Quantenmechanik", "Relativitätstheorie",
+            "Periodensystem", "DNS", "Immanuel Kant", "Georg Wilhelm Friedrich Hegel",
+        ],
+        'very_hard': [
+            "Scholastik", "Neuplatonismus", "Transzendentalphilosophie",
+            "Topologie", "Zahlentheorie", "Thermodynamik", "Elektrodynamik",
+            "Anthropologie", "Epistemologie", "Phänomenologie",
+        ],
+    },
+    'fr': {
+        'easy': [
+            "France", "Paris", "Allemagne", "Royaume-Uni", "États-Unis",
+            "Mathématiques", "Physique", "Chimie", "Musique", "Cinéma",
+            "Football", "Jeux olympiques", "Internet", "Ordinateur",
+            "Albert Einstein", "Napoléon Bonaparte", "Ludwig van Beethoven",
+        ],
+        'medium': [
+            "Seconde Guerre mondiale", "Première Guerre mondiale", "Guerre froide",
+            "Révolution française", "Révolution industrielle",
+            "Système solaire", "Trou noir", "Évolution", "Changement climatique",
+            "Démocratie", "Capitalisme", "Bouddhisme", "Islam",
+        ],
+        'hard': [
+            "Empire byzantin", "Empire ottoman", "République romaine",
+            "Renaissance", "Siècle des Lumières", "Mécanique quantique",
+            "Relativité générale", "Tableau périodique", "ADN", "Emmanuel Kant",
+        ],
+        'very_hard': [
+            "Scolastique", "Néoplatonisme", "Empirisme", "Rationalisme",
+            "Topologie", "Théorie des nombres", "Thermodynamique",
+            "Épistémologie", "Phénoménologie",
+        ],
+    },
+    'ja': {
+        'easy': [
+            "日本", "東京", "大阪", "京都", "アメリカ合衆国", "中国", "韓国",
+            "数学", "物理学", "化学", "音楽", "映画", "サッカー", "野球",
+            "オリンピック", "インターネット", "コンピュータ", "ネコ",
+            "アルベルト・アインシュタイン", "ナポレオン・ボナパルト",
+        ],
+        'medium': [
+            "第二次世界大戦", "第一次世界大戦", "冷戦", "フランス革命",
+            "産業革命", "太陽系", "ブラックホール", "進化論", "気候変動",
+            "民主主義", "資本主義", "仏教", "イスラム教",
+        ],
+        'hard': [
+            "ビザンティン帝国", "オスマン帝国", "ローマ共和国",
+            "ルネサンス", "啓蒙主義", "量子力学", "相対性理論",
+            "周期表", "DNA", "イマヌエル・カント",
+        ],
+        'very_hard': [
+            "スコラ学", "新プラトン主義", "経験主義", "合理主義",
+            "位相幾何学", "数論", "熱力学", "電磁気学",
+            "認識論", "現象学",
+        ],
+    },
+}
+
 POPULAR_PAGES = [
     "대한민국", "서울특별시", "부산광역시", "고양이", "개", "피자", "축구", "야구",
     "마인크래프트", "포켓몬스터", "BTS", "방탄소년단", "블랙핑크", "아이유",
@@ -242,8 +368,14 @@ def init_db():
             hops       INTEGER NOT NULL,
             path       TEXT    NOT NULL,
             difficulty TEXT    NOT NULL DEFAULT 'unknown',
+            wiki       TEXT    NOT NULL DEFAULT 'namu',
             created_at TEXT    NOT NULL
         )''')
+        # 마이그레이션: 기존 DB에 wiki 컬럼 없으면 추가
+        try:
+            conn.execute("ALTER TABLE rankings ADD COLUMN wiki TEXT NOT NULL DEFAULT 'namu'")
+        except Exception:
+            pass
 
 init_db()
 
@@ -397,8 +529,21 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     wiki_enc = quote(wiki, safe='')
     is_goal  = bool(goal) and title.strip() == goal.strip()
 
-    # 1. SPA 스크립트 제거
+    # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
+
+    # Wikipedia 검색바·헤더·푸터 숨기기 CSS 주입
+    if wiki != 'namu':
+        wp_hide = '''<style>
+.header-container,.minerva-header,.mw-header,.page-actions-menu,
+.talk-namespace-header,.mw-footer,#mw-mf-page-left,.mw-wiki-logo,
+.navigation-drawer,.menu,.mw-portlet-personal,.vector-menu,
+.searchform,.search-form,#searchInput,.minerva-search-form {
+    display:none!important;
+}
+.content-header-suffix,.pre-content { padding-top:0!important; }
+</style>'''
+        html = html.replace('</head>', wp_hide + '</head>', 1)
 
     # 2. lazy-load 이미지: data-src → src
     def fix_lazy(m):
@@ -625,6 +770,42 @@ def render_namumark(content: str, title: str, goal: str) -> str:
     return '\n'.join(out)
 
 
+def get_wikipedia_html(title: str, wiki: str) -> str:
+    """Wikipedia 모바일 페이지를 requests로 직접 가져옴 (Playwright 불필요)."""
+    cache_key = f'{wiki}:{title}'
+    now = _time.time()
+    if cache_key in _html_cache:
+        html, ts = _html_cache[cache_key]
+        if now - ts < CACHE_TTL:
+            return html
+
+    cfg  = WIKI_CONFIGS[wiki]
+    # 모바일 서브도메인으로 변환 (ko.m.wikipedia.org 등)
+    mobile_host = cfg['host'].replace('.wikipedia.org', '.m.wikipedia.org')
+    url  = f'https://{mobile_host}/wiki/{quote(title)}'
+    lang = wiki  # 'ko', 'en', 'de', 'fr', 'ja'
+    headers = {
+        'User-Agent': _MOBILE_UA,
+        'Accept-Language': f'{lang},en;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml',
+    }
+    try:
+        if cf_requests:
+            resp = cf_requests.get(url, timeout=15, headers=headers)
+        else:
+            raise RuntimeError('no HTTP client')
+        if resp.status_code == 200:
+            html = resp.text
+            _html_cache[cache_key] = (html, now)
+            print(f'[Wiki:{wiki}] {title}: OK {len(html)}B', flush=True)
+            return html
+        print(f'[Wiki:{wiki}] {title}: HTTP {resp.status_code}', flush=True)
+        return None
+    except Exception as e:
+        print(f'[Wiki:{wiki}] {title}: {e}', flush=True)
+        return None
+
+
 def get_page_links(title: str):
     """나무위키 링크 추출: Playwright 전용 스레드 사용."""
     now = _time.time()
@@ -845,13 +1026,20 @@ def page(title):
     if wiki not in WIKI_CONFIGS:
         wiki = 'namu'
 
-    # 1차: Playwright 전체 HTML 프록시
-    wiki_html = get_page_html(title, wiki)
+    # 페이지 HTML 가져오기: Wikipedia는 requests, 나무위키는 Playwright
+    if wiki == 'namu':
+        wiki_html = get_page_html(title, wiki)
+    else:
+        wiki_html = get_wikipedia_html(title, wiki)
+
     if wiki_html:
+        # Wikipedia 링크 내 언더스코어를 공백으로 정규화해서 is_goal 판단
+        norm = lambda s: unquote(s).replace('_', ' ').strip()
+        is_goal = bool(goal) and norm(title) == norm(goal)
         proxy_html = build_proxy_html(wiki_html, title, goal, wiki)
         return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
-    # 2차: 링크 목록 UI 폴백 (namu 전용)
+    # 폴백: 나무위키만 링크 목록 UI 제공
     is_goal = bool(goal) and title.strip() == goal.strip()
     links = get_page_links(title) or [] if wiki == 'namu' else []
     error = not links
@@ -885,13 +1073,18 @@ def api_random():
 
 @app.route('/api/random-game')
 def api_random_game():
-    """난이도에 맞는 랜덤 시작/목표 페이지 쌍 반환."""
+    """난이도에 맞는 랜덤 시작/목표 페이지 쌍 반환 (wiki별)."""
     difficulty = request.args.get('difficulty', 'easy')
-    pool = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
+    wiki       = request.args.get('wiki', 'namu')
+    if wiki == 'namu':
+        pool = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
+    else:
+        wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
+        pool = wiki_pool.get(difficulty, wiki_pool.get('easy', []))
     if len(pool) < 2:
         return jsonify({'error': 'not enough pages'}), 500
     start, goal = random.sample(pool, 2)
-    return jsonify({'start': start, 'goal': goal, 'difficulty': difficulty})
+    return jsonify({'start': start, 'goal': goal, 'difficulty': difficulty, 'wiki': wiki})
 
 
 @app.route('/api/exists/<path:title>')
@@ -922,11 +1115,12 @@ def api_ranking():
         if not nickname:
             return jsonify({'error': 'nickname required'}), 400
 
+        wiki_val = str(data.get('wiki', 'namu'))
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.execute(
                 '''INSERT INTO rankings
-                   (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                   (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (nickname,
                  str(data.get('start', '')),
                  str(data.get('goal', '')),
@@ -934,6 +1128,7 @@ def api_ranking():
                  int(data.get('hops', 0)),
                  json.dumps(data.get('path', [])),
                  str(data.get('difficulty', 'unknown')),
+                 wiki_val,
                  datetime.utcnow().isoformat())
             )
             new_id = cur.lastrowid
@@ -942,30 +1137,34 @@ def api_ranking():
 
     # GET
     difficulty = request.args.get('difficulty', '').strip()
+    wiki_filter = request.args.get('wiki', '').strip()
     limit = min(int(request.args.get('limit', 20)), 50)
 
     with sqlite3.connect(DB_PATH) as conn:
+        conditions = []
+        params: list = []
         if difficulty:
-            rows = conn.execute(
-                '''SELECT id, nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, created_at
-                   FROM rankings WHERE difficulty = ?
-                   ORDER BY elapsed_ms ASC, hops ASC LIMIT ?''',
-                (difficulty, limit)
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                '''SELECT id, nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, created_at
-                   FROM rankings ORDER BY elapsed_ms ASC, hops ASC LIMIT ?''',
-                (limit,)
-            ).fetchall()
+            conditions.append('difficulty = ?')
+            params.append(difficulty)
+        if wiki_filter:
+            conditions.append('wiki = ?')
+            params.append(wiki_filter)
+        where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+        params.append(limit)
+        rows = conn.execute(
+            f'''SELECT id, nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at
+                FROM rankings {where}
+                ORDER BY elapsed_ms ASC, hops ASC LIMIT ?''',
+            params
+        ).fetchall()
 
     results = [
         {'id': r[0], 'nickname': r[1], 'start': r[2], 'goal': r[3],
          'elapsed_ms': r[4], 'hops': r[5],
-         'path': json.loads(r[6]), 'difficulty': r[7], 'created_at': r[8]}
+         'path': json.loads(r[6]), 'difficulty': r[7], 'wiki': r[8], 'created_at': r[9]}
         for r in rows
     ]
-    return jsonify({'rankings': results, 'difficulty': difficulty})
+    return jsonify({'rankings': results, 'difficulty': difficulty, 'wiki': wiki_filter})
 
 
 @app.route('/api/health')
