@@ -197,26 +197,53 @@ def init_db():
 init_db()
 
 
-# ── Playwright 브라우저 풀 ─────────────────────────────────────
+# ── Playwright 전용 스레드 + 작업 큐 ──────────────────────────
+# Playwright sync API는 생성된 스레드에서만 사용 가능.
+# 모든 Playwright 작업을 단일 전용 스레드에서 처리한다.
 
-_pw_lock     = threading.Lock()
-_pw_instance = None
-_pw_browser  = None
-_pw_context  = None
+import queue as _queue_mod
+
+_pw_task_queue: '_queue_mod.Queue' = _queue_mod.Queue()
 _links_cache: dict = {}   # {title: (links, timestamp)}
 _html_cache:  dict = {}   # {title: (html,  timestamp)}
 CACHE_TTL = 600           # 10분
 
 
-def _get_pw_context():
-    """Playwright persistent context 초기화 — 모바일 Safari UA로 CF 우회."""
-    global _pw_instance, _pw_browser, _pw_context
-    if _pw_context is not None:
-        return _pw_context
+def _call_pw(func, timeout: int = 70):
+    """Playwright 전용 스레드에 작업을 넘기고 결과를 기다린다."""
+    event = threading.Event()
+    container = [None]
+
+    def wrapped(ctx):
+        try:
+            container[0] = func(ctx)
+        except Exception as e:
+            print(f'[PW-thread] error: {e}', flush=True)
+            container[0] = None
+        finally:
+            event.set()
+
+    _pw_task_queue.put(wrapped)
+    event.wait(timeout=timeout)
+    return container[0]
+
+
+def _pw_stealth(pg):
     try:
-        from playwright.sync_api import sync_playwright
-        _pw_instance = sync_playwright().start()
-        _pw_context = _pw_instance.chromium.launch_persistent_context(
+        from playwright_stealth import stealth_sync
+        stealth_sync(pg)
+    except ImportError:
+        pg.add_init_script(
+            "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
+        )
+
+
+def _playwright_thread():
+    """Playwright 전용 데몬 스레드 — 컨텍스트를 소유하고 큐를 소비한다."""
+    from playwright.sync_api import sync_playwright
+    try:
+        pw  = sync_playwright().start()
+        ctx = pw.chromium.launch_persistent_context(
             user_data_dir='/tmp/rabbit-hole-pw',
             headless=True,
             args=[
@@ -224,82 +251,84 @@ def _get_pw_context():
                 '--disable-dev-shm-usage',
                 '--disable-blink-features=AutomationControlled',
             ],
-            # 모바일 Safari로 위장 (Gemini 권고)
             user_agent=(
                 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
                 'AppleWebKit/605.1.15 (KHTML, like Gecko) '
                 'Version/17.0 Mobile/15E148 Safari/604.1'
             ),
-            is_mobile=True,
-            has_touch=True,
-            locale='ko-KR',
-            timezone_id='Asia/Seoul',
+            is_mobile=True, has_touch=True,
+            locale='ko-KR', timezone_id='Asia/Seoul',
             viewport={'width': 390, 'height': 844},
-            extra_http_headers={
-                'Accept-Language': 'ko-KR,ko;q=0.9',
-            },
+            extra_http_headers={'Accept-Language': 'ko-KR,ko;q=0.9'},
         )
-        print('[Playwright] persistent context initialized (mobile Safari)', flush=True)
+        print('[PW-thread] 시작 (mobile Safari)', flush=True)
+
+        # 워밍업 — CF 클리어런스 미리 확보
+        _do_warmup(ctx)
+
+        while True:
+            func = _pw_task_queue.get()
+            if func is None:
+                break
+            func(ctx)
     except Exception as e:
-        print(f'[Playwright] init error: {e}', flush=True)
-        _pw_instance = None
-        _pw_browser  = None
-        _pw_context  = None
-    return _pw_context
+        print(f'[PW-thread] 초기화 실패: {e}', flush=True)
+
+
+def _do_warmup(ctx):
+    title = '대한민국'
+    print('[Warmup] CF 클리어런스 워밍업 시작…', flush=True)
+    try:
+        pg = ctx.new_page()
+        _pw_stealth(pg)
+        pg.goto(f'https://namu.wiki/w/{quote(title)}',
+                wait_until='domcontentloaded', timeout=30000)
+        if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
+            pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=20000)
+        pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+        html = pg.content()
+        _html_cache[title] = (html, _time.time())
+        print(f'[Warmup] 완료: {len(html)}B', flush=True)
+    except Exception as e:
+        print(f'[Warmup] 실패: {e}', flush=True)
+    finally:
+        try: pg.close()
+        except: pass
+
+
+threading.Thread(target=_playwright_thread, daemon=True).start()
 
 
 def get_page_html(title: str):
-    """Playwright로 나무위키 전체 페이지 HTML 반환."""
+    """Playwright 전용 스레드를 통해 나무위키 전체 페이지 HTML 반환."""
     now = _time.time()
     if title in _html_cache:
         html, ts = _html_cache[title]
         if now - ts < CACHE_TTL:
             return html
 
-    with _pw_lock:
+    def _fetch(ctx):
+        pg = ctx.new_page()
         try:
-            ctx = _get_pw_context()
-            if ctx is None:
-                return None
-            pg = ctx.new_page()
-            try:
+            _pw_stealth(pg)
+            pg.goto(f'https://namu.wiki/w/{quote(title)}',
+                    wait_until='domcontentloaded', timeout=30000)
+            if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
+                print(f'[HTML] {title}: CF challenge 감지…', flush=True)
                 try:
-                    from playwright_stealth import stealth_sync
-                    stealth_sync(pg)
-                except ImportError:
-                    pg.add_init_script("""
-                        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                        Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-                        Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
-                        window.chrome = {runtime: {}};
-                    """)
-                pg.goto(
-                    f'https://namu.wiki/w/{quote(title)}',
-                    wait_until='domcontentloaded', timeout=30000,
-                )
-                # CF 챌린지 감지 → 해결될 때까지 대기
-                if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
-                    print(f'[HTML] {title}: CF challenge 감지, 대기 중…', flush=True)
-                    try:
-                        pg.wait_for_url(
-                            lambda u: '__cf_chl' not in u,
-                            timeout=20000,
-                        )
-                        print(f'[HTML] {title}: CF challenge 통과, 콘텐츠 로딩 대기…', flush=True)
-                    except Exception:
-                        print(f'[HTML] {title}: CF challenge 미해결', flush=True)
-                        return None
-                pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
-                html = pg.content()
-                _html_cache[title] = (html, now)
-                print(f'[HTML] {title}: OK {len(html)}B  url={pg.url}', flush=True)
-                return html
-            finally:
-                pg.close()
-        except Exception as e:
-            print(f'[HTML] {title}: {e}', flush=True)
-            _pw_context = None
-            return None
+                    pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=20000)
+                except Exception:
+                    print(f'[HTML] {title}: CF 미해결', flush=True)
+                    return None
+            pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+            html = pg.content()
+            _html_cache[title] = (html, _time.time())
+            print(f'[HTML] {title}: OK {len(html)}B', flush=True)
+            return html
+        finally:
+            pg.close()
+
+    return _call_pw(_fetch)
 
 
 def build_proxy_html(wiki_html: str, title: str, goal: str) -> str:
@@ -516,78 +545,49 @@ def render_namumark(content: str, title: str, goal: str) -> str:
 
 
 def get_page_links(title: str):
-    """나무위키 링크 추출: raw 엔드포인트 우선, Playwright 폴백."""
+    """나무위키 링크 추출: Playwright 전용 스레드 사용."""
     now = _time.time()
     if title in _links_cache:
         links, ts = _links_cache[title]
         if now - ts < CACHE_TTL:
             return links
 
-    # 1차: /raw/ 엔드포인트 (curl_cffi CF 우회, 빠름)
-    content = get_raw_content(title)
-    if content is not None:
-        links = parse_internal_links(content)
-        if links:
-            _links_cache[title] = (links, now)
-            print(f'[Raw] {title}: {len(links)}개', flush=True)
-            return links
-
-    # 2차: Playwright 폴백
-    with _pw_lock:
+    def _fetch(ctx):
+        pg = ctx.new_page()
         try:
-            ctx = _get_pw_context()
-            if ctx is None:
-                return None
-            page = ctx.new_page()
-            try:
+            _pw_stealth(pg)
+            pg.goto(f'https://namu.wiki/w/{quote(title)}',
+                    wait_until='domcontentloaded', timeout=30000)
+            if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
                 try:
-                    from playwright_stealth import stealth_sync
-                    stealth_sync(page)
-                except ImportError:
-                    page.add_init_script("""
-                        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                        Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-                        Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
-                        window.chrome = {runtime: {}};
-                    """)
-                page.goto(
-                    f'https://namu.wiki/w/{quote(title)}',
-                    wait_until='domcontentloaded', timeout=30000,
-                )
-                print(f'[Playwright] loaded: {page.url}', flush=True)
-                page.wait_for_selector('a[href^="/w/"]', timeout=25000)
+                    pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=20000)
+                except Exception:
+                    return None
+            pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+            raw = pg.eval_on_selector_all(
+                'a[href^="/w/"]',
+                'els => els.map(e => ({href: e.getAttribute("href"), text: e.innerText.trim()}))',
+            )
+            seen = set()
+            links = []
+            for item in raw:
+                href = item.get('href', '')
+                text = item.get('text', '').strip()
+                if not href.startswith('/w/') or not text:
+                    continue
+                page_title = unquote(href[3:]).split('#')[0].strip()
+                if not page_title or any(page_title.startswith(p) for p in EXCLUDED_PREFIXES):
+                    continue
+                if page_title in seen:
+                    continue
+                seen.add(page_title)
+                links.append({'title': page_title, 'display': text})
+            _links_cache[title] = (links, _time.time())
+            return links
+        finally:
+            pg.close()
 
-                raw = page.eval_on_selector_all(
-                    'a[href^="/w/"]',
-                    'els => els.map(e => ({href: e.getAttribute("href"), '
-                    'text: e.innerText.trim()}))',
-                )
-
-                seen = set()
-                links = []
-                for item in raw:
-                    href = item.get('href', '')
-                    text = item.get('text', '').strip()
-                    if not href.startswith('/w/') or not text:
-                        continue
-                    page_title = unquote(href[3:]).split('#')[0].strip()
-                    if not page_title:
-                        continue
-                    if any(page_title.startswith(p) for p in EXCLUDED_PREFIXES):
-                        continue
-                    if page_title in seen:
-                        continue
-                    seen.add(page_title)
-                    links.append({'title': page_title, 'display': text})
-
-                _links_cache[title] = (links, now)
-                return links
-            finally:
-                page.close()
-        except Exception as e:
-            print(f'[Playwright] {title}: {e}', flush=True)
-            _pw_context = None  # 다음 호출 시 재초기화
-            return None
+    return _call_pw(_fetch)
 
 
 # ── 레거시 scraper (데스크탑 wiki_fetcher 폴백용) ──────────────
@@ -642,42 +642,26 @@ def get_raw_content(title):
     except Exception as e:
         print(f'[Raw] {title}: requests 에러 {e}', flush=True)
 
-    # 2차: Playwright로 /raw/ 직접 요청 (실제 브라우저 → CF 우회)
-    with _pw_lock:
+    # 2차: Playwright로 /raw/ 직접 요청 (전용 스레드 사용)
+    def _fetch_raw(ctx):
+        pg = ctx.new_page()
         try:
-            ctx = _get_pw_context()
-            if ctx is None:
-                return None
-            pg = ctx.new_page()
-            try:
+            _pw_stealth(pg)
+            pg.goto(url, wait_until='domcontentloaded', timeout=20000)
+            if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
                 try:
-                    from playwright_stealth import stealth_sync
-                    stealth_sync(pg)
-                except ImportError:
-                    pass
-                pg.goto(url, wait_until='domcontentloaded', timeout=20000)
-                # CF 챌린지 대기
-                if '__cf_chl' in pg.url or 'just a moment' in pg.title().lower():
-                    try:
-                        pg.wait_for_url(
-                            lambda u: '__cf_chl' not in u,
-                            timeout=15000,
-                        )
-                    except Exception:
-                        return None
-                content = pg.inner_text('body').strip()
-                if content and not content.lower().startswith(
-                    ('<!doctype', '<html', 'just a moment')
-                ):
-                    print(f'[Raw-PW] {title}: OK ({len(content)}B)', flush=True)
-                    return content
-                return None
-            finally:
-                pg.close()
-        except Exception as e:
-            print(f'[Raw-PW] {title}: {e}', flush=True)
-            _pw_context = None
+                    pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=15000)
+                except Exception:
+                    return None
+            content = pg.inner_text('body').strip()
+            if content and not content.lower().startswith(('<!doctype', '<html', 'just a moment')):
+                print(f'[Raw-PW] {title}: OK ({len(content)}B)', flush=True)
+                return content
             return None
+        finally:
+            pg.close()
+
+    return _call_pw(_fetch_raw)
 
 
 def get_backlink_count(title: str):
@@ -924,19 +908,6 @@ def api_health():
 
     return jsonify(status)
 
-
-def _warmup():
-    """서버 시작 시 CF 클리어런스 쿠키를 미리 확보하기 위한 워밍업."""
-    _time.sleep(3)  # 서버 완전 기동 대기
-    print('[Warmup] CF 클리어런스 워밍업 시작…', flush=True)
-    result = get_page_html('대한민국')
-    if result:
-        print(f'[Warmup] 완료: {len(result)}B', flush=True)
-    else:
-        print('[Warmup] 실패 (CF 차단 가능성)', flush=True)
-
-
-threading.Thread(target=_warmup, daemon=True).start()
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
