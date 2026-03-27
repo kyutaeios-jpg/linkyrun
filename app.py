@@ -603,6 +603,18 @@ def _do_warmup(ctx):
 threading.Thread(target=_playwright_thread, daemon=True).start()
 
 
+def _warmup_loop():
+    """8분마다 CF 클리어런스를 갱신한다."""
+    while True:
+        _time.sleep(480)
+        print('[Warmup-loop] 정기 재워밍업…', flush=True)
+        def _task(ctx):
+            _do_warmup(ctx)
+        _call_pw(_task, timeout=90)
+
+threading.Thread(target=_warmup_loop, daemon=True).start()
+
+
 def get_page_html(title: str, wiki: str = 'namu'):
     """Playwright 전용 스레드를 통해 위키 전체 페이지 HTML 반환."""
     cache_key = f'{wiki}:{title}'
@@ -614,11 +626,16 @@ def get_page_html(title: str, wiki: str = 'namu'):
 
     def _fetch(ctx):
         html = _pw_fetch_wiki(ctx, title, wiki)
+        if html is None and wiki == 'namu':
+            # CF 클리어런스 만료 가능성 — 재워밍업 후 1회 재시도
+            print(f'[PW] {title}: 로드 실패, 재워밍업 후 재시도…', flush=True)
+            _do_warmup(ctx)
+            html = _pw_fetch_wiki(ctx, title, wiki)
         if html:
             _html_cache[cache_key] = (html, _time.time())
         return html
 
-    return _call_pw(_fetch)
+    return _call_pw(_fetch, timeout=120)
 
 
 def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') -> str:
