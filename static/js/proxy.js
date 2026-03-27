@@ -61,8 +61,15 @@
 
     window.rhGiveUp = function () {
         if (!confirm('게임을 포기하시겠습니까?')) return;
+        const goal = gs ? gs.goal : null;
+        const wiki = gs ? (gs.wiki || 'namu') : 'namu';
         clear();
-        window.location.href = '/';
+        if (goal && confirm(`목표 페이지 "${goal}"로 이동하시겠습니까?\n취소: 홈으로 이동`)) {
+            window.location.href =
+                `/page/${encodeURIComponent(goal)}?goal=${encodeURIComponent(goal)}&wiki=${encodeURIComponent(wiki)}`;
+        } else {
+            window.location.href = '/';
+        }
     };
 
     function showVictory() {

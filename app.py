@@ -1004,8 +1004,13 @@ def encode_uri_filter(s):
 
 @app.route('/')
 def index():
+    wiki_all_pages = {'namu': ALL_PAGES}
+    for wk, diff_pools in WIKI_PAGES_BY_DIFFICULTY.items():
+        pages = sorted(set(p for pool in diff_pools.values() for p in pool))
+        wiki_all_pages[wk] = pages
     return render_template('index.html', presets=PRESET_CHALLENGES,
-                           all_pages=json.dumps(ALL_PAGES, ensure_ascii=False))
+                           all_pages=json.dumps(ALL_PAGES, ensure_ascii=False),
+                           wiki_all_pages=json.dumps(wiki_all_pages, ensure_ascii=False))
 
 
 @app.route('/api/search')

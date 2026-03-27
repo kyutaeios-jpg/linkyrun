@@ -218,15 +218,18 @@
         let selectedWiki = 'namu';
 
         /* ── 자동완성 ────────────────────────────────── */
-        const ALL_PAGES = {{ all_pages | safe }};
-        (function initDatalist() {
+        const WIKI_ALL_PAGES = {{ wiki_all_pages | safe }};
+
+        function updateDatalist(wiki) {
             const dl = document.getElementById('page-suggestions');
-            ALL_PAGES.forEach(p => {
+            dl.innerHTML = '';
+            (WIKI_ALL_PAGES[wiki] || WIKI_ALL_PAGES['namu']).forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p;
                 dl.appendChild(opt);
             });
-        })();
+        }
+        updateDatalist('namu');
 
         /* ── 화면 전환 ──────────────────────────────── */
         function showScreen(id) {
@@ -375,6 +378,9 @@
                     document.querySelectorAll('.wiki-card').forEach(c => c.classList.remove('wiki-card-active'));
                     card.classList.add('wiki-card-active');
                     selectedWiki = card.dataset.wiki;
+                    updateDatalist(selectedWiki);
+                    document.getElementById('start-input').value = '';
+                    document.getElementById('goal-input').value = '';
                 });
             });
             document.getElementById('btn-wiki-next').addEventListener('click', () => showScreen('screen-intro'));
