@@ -568,9 +568,21 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
             print(f'[PW:{wiki}] {title}: CF 최종 해제 실패', flush=True)
             return None
 
-        # 실제 위키 콘텐츠 대기
+        # 나무위키 SPA "잠시만 기다리십시오" → 실제 콘텐츠 렌더 대기
+        cur_title = (pg.title() or '').lower()
+        if '잠시만' in cur_title:
+            print(f'[PW:{wiki}] {title}: SPA 로딩 중, 콘텐츠 대기…', flush=True)
+            try:
+                pg.wait_for_function(
+                    "() => !document.title.includes('잠시만') && !document.title.includes('just a moment')",
+                    timeout=30000
+                )
+            except Exception:
+                print(f'[PW:{wiki}] {title}: SPA 렌더 타임아웃', flush=True)
+
+        # 실제 위키 링크 렌더 대기 (SPA 완료 기준)
         try:
-            pg.wait_for_selector(cfg['link_selector'], timeout=15000)
+            pg.wait_for_selector(cfg['link_selector'], timeout=35000)
         except Exception:
             print(f'[PW:{wiki}] {title}: link_selector 미탐지 (페이지 반환)', flush=True)
 
