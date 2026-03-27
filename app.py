@@ -477,7 +477,15 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
             except Exception:
                 print(f'[PW:{wiki}] {title}: CF 미해결', flush=True)
                 return None
-        pg.wait_for_selector(cfg['link_selector'], timeout=25000)
+        # 링크 셀렉터 대기 — 실패해도 페이지 내용은 반환
+        try:
+            pg.wait_for_selector(cfg['link_selector'], timeout=15000)
+        except Exception:
+            print(f'[PW:{wiki}] {title}: link_selector 미탐지, body로 대기', flush=True)
+            try:
+                pg.wait_for_selector('body', timeout=8000)
+            except Exception:
+                pass
         html = pg.content()
         print(f'[PW:{wiki}] {title}: OK {len(html)}B', flush=True)
         return html
