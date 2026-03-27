@@ -3,6 +3,7 @@ import re
 import json
 import random
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime
 from html import escape as html_escape
 from flask import Flask, render_template, request, jsonify
@@ -30,6 +31,45 @@ DB_PATH = os.environ.get(
     'DB_PATH',
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rankings.db')
 )
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+# PostgreSQL 사용 가능 여부
+_USE_PG = bool(DATABASE_URL)
+if _USE_PG:
+    try:
+        import psycopg2
+        import psycopg2.extras
+    except ImportError:
+        _USE_PG = False
+
+@contextmanager
+def _db_conn():
+    """SQLite 또는 PostgreSQL 커넥션을 컨텍스트 매니저로 반환."""
+    if _USE_PG:
+        conn = psycopg2.connect(DATABASE_URL)
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    else:
+        with sqlite3.connect(DB_PATH) as conn:
+            yield conn
+
+def _ph(n=1):
+    """플레이스홀더: PostgreSQL=%s, SQLite=?"""
+    return '%s' if _USE_PG else '?'
+
+def _execute(conn, sql, params=()):
+    if _USE_PG:
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        return cur
+    else:
+        return conn.execute(sql, params)
 
 EXCLUDED_PREFIXES = [
     '파일:', '분류:', 'File:', 'Category:', 'Image:', 'image:',
@@ -358,8 +398,21 @@ ALL_PAGES = sorted(set(POPULAR_PAGES) |
 # ── DB 초기화 ─────────────────────────────────────────────────
 
 def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute('''CREATE TABLE IF NOT EXISTS rankings (
+    if _USE_PG:
+        create_sql = '''CREATE TABLE IF NOT EXISTS rankings (
+            id         SERIAL  PRIMARY KEY,
+            nickname   TEXT    NOT NULL,
+            start_page TEXT    NOT NULL,
+            goal_page  TEXT    NOT NULL,
+            elapsed_ms INTEGER NOT NULL,
+            hops       INTEGER NOT NULL,
+            path       TEXT    NOT NULL,
+            difficulty TEXT    NOT NULL DEFAULT 'unknown',
+            wiki       TEXT    NOT NULL DEFAULT 'namu',
+            created_at TEXT    NOT NULL
+        )'''
+    else:
+        create_sql = '''CREATE TABLE IF NOT EXISTS rankings (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             nickname   TEXT    NOT NULL,
             start_page TEXT    NOT NULL,
@@ -370,12 +423,14 @@ def init_db():
             difficulty TEXT    NOT NULL DEFAULT 'unknown',
             wiki       TEXT    NOT NULL DEFAULT 'namu',
             created_at TEXT    NOT NULL
-        )''')
-        # 마이그레이션: 기존 DB에 wiki 컬럼 없으면 추가
-        try:
-            conn.execute("ALTER TABLE rankings ADD COLUMN wiki TEXT NOT NULL DEFAULT 'namu'")
-        except Exception:
-            pass
+        )'''
+    with _db_conn() as conn:
+        _execute(conn, create_sql)
+        if not _USE_PG:
+            try:
+                _execute(conn, "ALTER TABLE rankings ADD COLUMN wiki TEXT NOT NULL DEFAULT 'namu'")
+            except Exception:
+                pass
 
 init_db()
 
@@ -1140,22 +1195,30 @@ def api_ranking():
             return jsonify({'error': 'nickname required'}), 400
 
         wiki_val = str(data.get('wiki', 'namu'))
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.execute(
-                '''INSERT INTO rankings
-                   (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (nickname,
-                 str(data.get('start', '')),
-                 str(data.get('goal', '')),
-                 int(data.get('elapsed_ms', 0)),
-                 int(data.get('hops', 0)),
-                 json.dumps(data.get('path', [])),
-                 str(data.get('difficulty', 'unknown')),
-                 wiki_val,
-                 datetime.utcnow().isoformat())
-            )
-            new_id = cur.lastrowid
+        ph = _ph()
+        if _USE_PG:
+            insert_sql = f'''INSERT INTO rankings
+               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
+               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph}) RETURNING id'''
+        else:
+            insert_sql = f'''INSERT INTO rankings
+               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
+               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})'''
+        params = (nickname,
+                  str(data.get('start', '')),
+                  str(data.get('goal', '')),
+                  int(data.get('elapsed_ms', 0)),
+                  int(data.get('hops', 0)),
+                  json.dumps(data.get('path', [])),
+                  str(data.get('difficulty', 'unknown')),
+                  wiki_val,
+                  datetime.utcnow().isoformat())
+        with _db_conn() as conn:
+            cur = _execute(conn, insert_sql, params)
+            if _USE_PG:
+                new_id = cur.fetchone()[0]
+            else:
+                new_id = cur.lastrowid
 
         return jsonify({'ok': True, 'id': new_id})
 
@@ -1164,23 +1227,25 @@ def api_ranking():
     wiki_filter = request.args.get('wiki', '').strip()
     limit = min(int(request.args.get('limit', 20)), 50)
 
-    with sqlite3.connect(DB_PATH) as conn:
+    ph = _ph()
+    with _db_conn() as conn:
         conditions = []
         params: list = []
         if difficulty:
-            conditions.append('difficulty = ?')
+            conditions.append(f'difficulty = {ph}')
             params.append(difficulty)
         if wiki_filter:
-            conditions.append('wiki = ?')
+            conditions.append(f'wiki = {ph}')
             params.append(wiki_filter)
         where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
         params.append(limit)
-        rows = conn.execute(
+        cur = _execute(conn,
             f'''SELECT id, nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at
                 FROM rankings {where}
-                ORDER BY elapsed_ms ASC, hops ASC LIMIT ?''',
+                ORDER BY elapsed_ms ASC, hops ASC LIMIT {ph}''',
             params
-        ).fetchall()
+        )
+        rows = cur.fetchall()
 
     results = [
         {'id': r[0], 'nickname': r[1], 'start': r[2], 'goal': r[3],
@@ -1196,8 +1261,8 @@ def api_health():
     """서버 상태 및 Playwright 동작 여부 확인."""
     status = {'db': False, 'playwright': False, 'playwright_error': None}
     try:
-        with sqlite3.connect(DB_PATH) as c:
-            c.execute('SELECT 1')
+        with _db_conn() as c:
+            _execute(c, 'SELECT 1')
         status['db'] = True
     except Exception as e:
         status['db_error'] = str(e)
