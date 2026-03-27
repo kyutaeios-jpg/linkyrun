@@ -513,6 +513,24 @@ def _playwright_thread():
         print(f'[PW-thread] 초기화 실패: {e}', flush=True)
 
 
+def _is_cf_page(pg):
+    """현재 페이지가 CF 챌린지 페이지인지 확인."""
+    title = (pg.title() or '').lower()
+    url   = pg.url
+    if 'just a moment' in title or '보안 확인' in title:
+        return True
+    if '__cf_chl' in url:
+        return True
+    # HTML 내용으로도 확인
+    try:
+        body_text = pg.locator('body').inner_text(timeout=2000)
+        if 'cf-browser-verification' in body_text or '보안 확인 수행 중' in body_text:
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
     """Playwright로 위키 페이지 로드 — CF 처리 포함. ctx 스레드에서 호출."""
     cfg = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
@@ -521,43 +539,40 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
         _pw_stealth(pg)
         url = cfg['base_url'] + quote(title)
         pg.goto(url, wait_until='domcontentloaded', timeout=35000)
-        page_title = (pg.title() or '').lower()
-        page_url   = pg.url
-        print(f'[PW:{wiki}] {title}: url={page_url}  title={pg.title()!r}', flush=True)
-        if '__cf_chl' in page_url or 'just a moment' in page_title:
-            print(f'[PW:{wiki}] {title}: CF challenge 감지, 대기 중…', flush=True)
+        print(f'[PW:{wiki}] {title}: url={pg.url}  title={pg.title()!r}', flush=True)
+
+        # CF 챌린지 감지 시 실제 위키 콘텐츠가 로드될 때까지 대기
+        if _is_cf_page(pg):
+            print(f'[PW:{wiki}] {title}: CF 감지, 실제 콘텐츠 대기 중…', flush=True)
             try:
-                pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=22000)
-                print(f'[PW:{wiki}] {title}: CF 통과 → {pg.url}', flush=True)
+                # 타이틀이 CF 관련 문구에서 벗어날 때까지 대기
+                pg.wait_for_function(
+                    """() => {
+                        const t = document.title.toLowerCase();
+                        return !t.includes('just a moment') && !t.includes('보안 확인') && t.length > 0;
+                    }""",
+                    timeout=35000
+                )
+                # 추가로 networkidle 대기 (JS 리다이렉트 완료)
+                try:
+                    pg.wait_for_load_state('networkidle', timeout=10000)
+                except Exception:
+                    pass
+                print(f'[PW:{wiki}] {title}: CF 통과 → {pg.url}  title={pg.title()!r}', flush=True)
             except Exception:
                 print(f'[PW:{wiki}] {title}: CF 미해결', flush=True)
                 return None
-        # CF 챌린지가 아직 남아있는지 한 번 더 확인
-        cur_url = pg.url
-        cur_title = (pg.title() or '').lower()
-        if '__cf_chl' in cur_url or 'just a moment' in cur_title or '보안 확인' in cur_title:
-            print(f'[PW:{wiki}] {title}: CF 재감지, 추가 대기…', flush=True)
-            try:
-                pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=25000)
-            except Exception:
-                print(f'[PW:{wiki}] {title}: CF 최종 미해결', flush=True)
-                return None
 
-        # 링크 셀렉터 대기 — 실패해도 페이지 내용은 반환
+        # 최종 CF 체크
+        if _is_cf_page(pg):
+            print(f'[PW:{wiki}] {title}: CF 최종 해제 실패', flush=True)
+            return None
+
+        # 실제 위키 콘텐츠 대기
         try:
             pg.wait_for_selector(cfg['link_selector'], timeout=15000)
         except Exception:
-            print(f'[PW:{wiki}] {title}: link_selector 미탐지, body로 대기', flush=True)
-            try:
-                pg.wait_for_selector('body', timeout=8000)
-            except Exception:
-                pass
-
-        # 최종적으로 CF 페이지면 None 반환
-        final_title = (pg.title() or '').lower()
-        if 'just a moment' in final_title or '보안 확인' in final_title:
-            print(f'[PW:{wiki}] {title}: CF 해제 실패, None 반환', flush=True)
-            return None
+            print(f'[PW:{wiki}] {title}: link_selector 미탐지 (페이지 반환)', flush=True)
 
         html = pg.content()
         print(f'[PW:{wiki}] {title}: OK {len(html)}B', flush=True)
