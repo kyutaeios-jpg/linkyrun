@@ -4,6 +4,7 @@ import json
 import random
 import sqlite3
 from datetime import datetime
+from html import escape as html_escape
 from flask import Flask, render_template, request, jsonify
 from urllib.parse import quote, unquote
 
@@ -395,6 +396,114 @@ const IS_GOAL    = {ig_json};
     return html
 
 
+def _nm_inline(text: str, goal_enc: str) -> str:
+    """namumark 인라인 마크업 → HTML (링크 위주)."""
+    saved: list = []
+
+    def save_link(m):
+        inner = m.group(1)
+        parts = inner.split('|', 1)
+        raw   = parts[0].split('#')[0].strip()
+        disp  = (parts[1].strip() if len(parts) > 1 else raw)
+        idx   = len(saved)
+        if not raw or any(raw.startswith(p) for p in EXCLUDED_PREFIXES):
+            saved.append(html_escape(disp))
+        elif raw.startswith(('http://', 'https://')):
+            saved.append(
+                f'<a href="{html_escape(raw)}" class="ext-link" target="_blank" rel="noopener">'
+                f'{html_escape(disp)}</a>'
+            )
+        else:
+            saved.append(
+                f'<a href="/page/{quote(raw, safe="")}?goal={goal_enc}" class="wiki-link">'
+                f'{html_escape(disp)}</a>'
+            )
+        return f'\x00{idx}\x00'
+
+    text = re.sub(r'\[\[([^\[\]]+)\]\]', save_link, text)
+    text = html_escape(text)                       # 나머지 텍스트 안전하게 이스케이프
+    text = re.sub(r"'''(.+?)'''", r'<strong>\1</strong>', text)
+    text = re.sub(r"''(.+?)''",   r'<em>\1</em>',        text)
+    text = re.sub(r'~~(.+?)~~',   r'<s>\1</s>',          text)
+    text = re.sub(r'__(.+?)__',   r'<u>\1</u>',          text)
+
+    for idx, html in enumerate(saved):
+        text = text.replace(f'\x00{idx}\x00', html)
+
+    text = re.sub(r'\{\{\{.*?\}\}\}', '', text)
+    text = re.sub(r'\{[^}\n]{0,60}\}', '', text)
+    return text
+
+
+def render_namumark(content: str, title: str, goal: str) -> str:
+    """namumark 원문 → 게임용 HTML. curl_cffi로 /raw/ 에서 받은 텍스트를 변환."""
+    goal_enc = quote(goal, safe='')
+
+    # 코드 블록 / 표 등 복잡한 블록은 제거
+    content = re.sub(r'\{\{\{.*?\}\}\}', '', content, flags=re.DOTALL)
+
+    lines      = content.split('\n')
+    out        = []
+    in_list    = None
+
+    for line in lines:
+        # 제목 (== 제목 ==)
+        m = re.match(r'^(={1,6})\s*(.+?)\s*\1\s*$', line)
+        if m:
+            if in_list: out.append(f'</{in_list}>'); in_list = None
+            level = min(len(m.group(1)) + 1, 6)   # h2 ~ h6
+            out.append(f'<h{level}>{_nm_inline(m.group(2), goal_enc)}</h{level}>')
+            continue
+
+        # 수평선
+        if re.match(r'^-{4,}\s*$', line):
+            if in_list: out.append(f'</{in_list}>'); in_list = None
+            out.append('<hr>')
+            continue
+
+        # 비순서 목록
+        m = re.match(r'^\s*\*\s+(.+)$', line)
+        if m:
+            if in_list != 'ul':
+                if in_list: out.append(f'</{in_list}>')
+                out.append('<ul>'); in_list = 'ul'
+            out.append(f'<li>{_nm_inline(m.group(1), goal_enc)}</li>')
+            continue
+
+        # 순서 목록
+        m = re.match(r'^\s*\d+\.\s+(.+)$', line)
+        if m:
+            if in_list != 'ol':
+                if in_list: out.append(f'</{in_list}>')
+                out.append('<ol>'); in_list = 'ol'
+            out.append(f'<li>{_nm_inline(m.group(1), goal_enc)}</li>')
+            continue
+
+        # 목록 종료
+        if in_list:
+            out.append(f'</{in_list}>'); in_list = None
+
+        # 인용
+        m = re.match(r'^>+\s*(.*)$', line)
+        if m:
+            inner = m.group(1).strip()
+            out.append(f'<blockquote>{_nm_inline(inner, goal_enc) if inner else "&nbsp;"}</blockquote>')
+            continue
+
+        # 빈 줄
+        if not line.strip():
+            out.append('')
+            continue
+
+        # 일반 텍스트
+        out.append(f'<p>{_nm_inline(line, goal_enc)}</p>')
+
+    if in_list:
+        out.append(f'</{in_list}>')
+
+    return '\n'.join(out)
+
+
 def get_page_links(title: str):
     """나무위키 링크 추출: raw 엔드포인트 우선, Playwright 폴백."""
     now = _time.time()
@@ -603,26 +712,32 @@ def page(title):
     title = unquote(title)
     goal  = request.args.get('goal', '')
 
-    # 1차: 전체 HTML 프록시 (실제 나무위키 페이지 표시)
+    is_goal = bool(goal) and title.strip() == goal.strip()
+
+    # 1차: 전체 HTML 프록시 (Playwright, CF 우회 성공 시)
     if _wiki_fetcher is None:
         html = get_page_html(title)
         if html is not None:
             return build_proxy_html(html, title, goal), 200, \
                    {'Content-Type': 'text/html; charset=utf-8'}
 
-    # 2차 폴백: 링크 목록 UI
+    # 2차: namumark 렌더링 (curl_cffi → /raw/ 엔드포인트, 안정적)
+    raw_content = None
     if _wiki_fetcher is not None:
-        content = _wiki_fetcher(title)
-        links   = parse_internal_links(content) if content else []
-        error   = content is None
+        raw_content = _wiki_fetcher(title)
     else:
-        links = get_page_links(title)
-        error = links is None
-        if error:
-            links = []
+        raw_content = get_raw_content(title)
 
-    is_goal = bool(goal) and title.strip() == goal.strip()
-    status  = 404 if error else 200
+    if raw_content is not None:
+        rendered = render_namumark(raw_content, title, goal)
+        return render_template('wiki.html',
+                               title=title, content=rendered,
+                               goal=goal, is_goal=is_goal)
+
+    # 3차 폴백: 링크 목록 UI
+    links = get_page_links(title) or []
+    error = not links
+    status = 404 if error else 200
     return render_template('page.html',
                            title=title, links=links, goal=goal,
                            is_goal=is_goal, error=error), status
