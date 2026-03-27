@@ -281,16 +281,11 @@
             }
         }
 
-        async function randomPage(inputId, btnId) {
-            const btn  = document.getElementById(btnId);
-            const prev = btn.textContent;
-            btn.textContent = '⏳'; btn.disabled = true;
-            try {
-                const res  = await fetch('/api/random?count=1');
-                const data = await res.json();
-                document.getElementById(inputId).value = data.pages[0];
-            } catch (e) { console.error(e); }
-            finally { btn.textContent = prev; btn.disabled = false; }
+        function randomPage(inputId, btnId) {
+            const pages = WIKI_ALL_PAGES[selectedWiki] || WIKI_ALL_PAGES['namu'];
+            if (!pages || pages.length === 0) return;
+            const pick = pages[Math.floor(Math.random() * pages.length)];
+            document.getElementById(inputId).value = pick;
         }
 
         /* ── 랭킹 모달 ──────────────────────────────── */
