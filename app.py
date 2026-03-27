@@ -275,25 +275,50 @@ def _playwright_thread():
         print(f'[PW-thread] 초기화 실패: {e}', flush=True)
 
 
+def _pw_fetch_wiki(ctx, title: str):
+    """Playwright로 나무위키 페이지 로드 — CF 처리 포함. ctx 스레드에서 호출."""
+    pg = ctx.new_page()
+    try:
+        _pw_stealth(pg)
+        pg.goto(f'https://namu.wiki/w/{quote(title)}',
+                wait_until='domcontentloaded', timeout=35000)
+        # CF 챌린지 감지 (URL 또는 타이틀)
+        page_title = (pg.title() or '').lower()
+        page_url   = pg.url
+        print(f'[PW] {title}: url={page_url}  title={pg.title()!r}', flush=True)
+        if '__cf_chl' in page_url or 'just a moment' in page_title:
+            print(f'[PW] {title}: CF challenge 감지, 대기 중…', flush=True)
+            try:
+                pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=22000)
+                print(f'[PW] {title}: CF 통과 → {pg.url}', flush=True)
+            except Exception:
+                print(f'[PW] {title}: CF 미해결', flush=True)
+                return None
+        # React SPA가 콘텐츠 렌더링할 때까지 대기
+        try:
+            pg.wait_for_load_state('networkidle', timeout=10000)
+        except Exception:
+            pass  # networkidle 실패해도 계속 시도
+        pg.wait_for_selector('a[href^="/w/"]', timeout=20000)
+        html = pg.content()
+        print(f'[PW] {title}: OK {len(html)}B', flush=True)
+        return html
+    finally:
+        pg.close()
+
+
 def _do_warmup(ctx):
     title = '대한민국'
     print('[Warmup] CF 클리어런스 워밍업 시작…', flush=True)
     try:
-        pg = ctx.new_page()
-        _pw_stealth(pg)
-        pg.goto(f'https://namu.wiki/w/{quote(title)}',
-                wait_until='domcontentloaded', timeout=30000)
-        if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
-            pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=20000)
-        pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
-        html = pg.content()
-        _html_cache[title] = (html, _time.time())
-        print(f'[Warmup] 완료: {len(html)}B', flush=True)
+        html = _pw_fetch_wiki(ctx, title)
+        if html:
+            _html_cache[title] = (html, _time.time())
+            print(f'[Warmup] 완료: {len(html)}B', flush=True)
+        else:
+            print('[Warmup] 실패', flush=True)
     except Exception as e:
         print(f'[Warmup] 실패: {e}', flush=True)
-    finally:
-        try: pg.close()
-        except: pass
 
 
 threading.Thread(target=_playwright_thread, daemon=True).start()
@@ -308,25 +333,10 @@ def get_page_html(title: str):
             return html
 
     def _fetch(ctx):
-        pg = ctx.new_page()
-        try:
-            _pw_stealth(pg)
-            pg.goto(f'https://namu.wiki/w/{quote(title)}',
-                    wait_until='domcontentloaded', timeout=30000)
-            if '__cf_chl' in pg.url or 'just a moment' in (pg.title() or '').lower():
-                print(f'[HTML] {title}: CF challenge 감지…', flush=True)
-                try:
-                    pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=20000)
-                except Exception:
-                    print(f'[HTML] {title}: CF 미해결', flush=True)
-                    return None
-            pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
-            html = pg.content()
+        html = _pw_fetch_wiki(ctx, title)
+        if html:
             _html_cache[title] = (html, _time.time())
-            print(f'[HTML] {title}: OK {len(html)}B', flush=True)
-            return html
-        finally:
-            pg.close()
+        return html
 
     return _call_pw(_fetch)
 
