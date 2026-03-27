@@ -619,12 +619,16 @@ def get_raw_content(title):
     try:
         response = _fetch(url)
         if response.status_code != 200:
+            print(f'[Raw] {title}: HTTP {response.status_code}', flush=True)
             return None
         text = response.text
         if text.strip().lower().startswith(('<!doctype', '<html')):
+            print(f'[Raw] {title}: CF 차단 (HTML 응답)', flush=True)
             return None
+        print(f'[Raw] {title}: OK ({len(text)}B)', flush=True)
         return text
-    except Exception:
+    except Exception as e:
+        print(f'[Raw] {title}: 에러 {e}', flush=True)
         return None
 
 
