@@ -412,10 +412,15 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
         return f'<{tag}{attrs_clean}>'
     html = re.sub(r'<(img)(\b[^>]*?\bdata-src="[^"]*"[^>]*)>', fix_lazy, html)
 
-    # 3. 내부 위키 링크 → 프록시 경로
+    # 3. 내부 위키 링크 → 프록시 경로 (제외 접두사는 원본 URL로 유지)
+    wp_excluded = cfg.get('wp_excluded', [])
     def rewrite_link(m):
-        raw  = m.group(1)                               # e.g. /w/제목 or /wiki/Title
+        raw  = m.group(1)
         part = raw[len(prefix):].split('#')[0].split('?')[0]
+        decoded = unquote(part)
+        # 제외 접두사(분류:, 틀:, 파일: 등)는 프록시 안 함
+        if any(decoded.startswith(p) for p in EXCLUDED_PREFIXES + wp_excluded):
+            return f'href="https://{host}{raw}" target="_blank" rel="noopener"'
         return f'href="/page/{part}?goal={goal_enc}&wiki={wiki_enc}"'
     escaped_prefix = re.escape(prefix)
     html = re.sub(rf'href="({escaped_prefix}[^"]*)"', rewrite_link, html)
