@@ -502,6 +502,31 @@ def api_ranking():
     return jsonify({'rankings': results, 'difficulty': difficulty})
 
 
+@app.route('/api/health')
+def api_health():
+    """서버 상태 및 Playwright 동작 여부 확인."""
+    status = {'db': False, 'playwright': False, 'playwright_error': None}
+    try:
+        with sqlite3.connect(DB_PATH) as c:
+            c.execute('SELECT 1')
+        status['db'] = True
+    except Exception as e:
+        status['db_error'] = str(e)
+
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            b = p.chromium.launch(headless=True, args=['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--single-process'])
+            page = b.new_page()
+            page.goto('about:blank')
+            b.close()
+        status['playwright'] = True
+    except Exception as e:
+        status['playwright_error'] = str(e)
+
+    return jsonify(status)
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'false').lower() == 'true'
