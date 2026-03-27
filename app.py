@@ -203,6 +203,7 @@ _pw_instance = None
 _pw_browser  = None
 _pw_context  = None
 _links_cache: dict = {}   # {title: (links, timestamp)}
+_html_cache:  dict = {}   # {title: (html,  timestamp)}
 CACHE_TTL = 600           # 10분
 
 
@@ -245,6 +246,153 @@ def _get_pw_context():
         _pw_browser  = None
         _pw_context  = None
     return _pw_context
+
+
+def get_page_html(title: str):
+    """Playwright로 나무위키 전체 페이지 HTML 반환."""
+    now = _time.time()
+    if title in _html_cache:
+        html, ts = _html_cache[title]
+        if now - ts < CACHE_TTL:
+            return html
+
+    with _pw_lock:
+        try:
+            ctx = _get_pw_context()
+            if ctx is None:
+                return None
+            pg = ctx.new_page()
+            try:
+                try:
+                    from playwright_stealth import stealth_sync
+                    stealth_sync(pg)
+                except ImportError:
+                    pg.add_init_script("""
+                        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                        Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+                        Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
+                        window.chrome = {runtime: {}};
+                    """)
+                pg.goto(
+                    f'https://namu.wiki/w/{quote(title)}',
+                    wait_until='domcontentloaded', timeout=30000,
+                )
+                pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+                html = pg.content()
+                _html_cache[title] = (html, now)
+                print(f'[HTML] {title}: {len(html)}B', flush=True)
+                return html
+            finally:
+                pg.close()
+        except Exception as e:
+            print(f'[HTML] {title}: {e}', flush=True)
+            _pw_context = None
+            return None
+
+
+def build_proxy_html(wiki_html: str, title: str, goal: str) -> str:
+    """나무위키 HTML을 게임 프록시 페이지로 변환."""
+    goal_enc = quote(goal, safe='')
+    is_goal  = bool(goal) and title.strip() == goal.strip()
+
+    # 1. namu.wiki SPA 스크립트 제거 (재실행 방지)
+    html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
+
+    # 2. /w/ 내부 링크 → 프록시 경로
+    def rewrite_link(m):
+        raw  = m.group(1)                            # e.g. /w/%EA%B3%...
+        part = raw[3:].split('#')[0].split('?')[0]   # title only
+        return f'href="/page/{part}?goal={goal_enc}"'
+    html = re.sub(r'href="(/w/[^"]*)"', rewrite_link, html)
+
+    # 3. 나머지 상대 URL (//는 제외, /page/ 도 제외) → 절대 URL
+    html = re.sub(
+        r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
+        lambda m: f'{m.group(1)}="https://namu.wiki{m.group(2)}"',
+        html,
+    )
+
+    # 4. HUD + 스크립트 주입
+    t_json  = json.dumps(title)
+    g_json  = json.dumps(goal)
+    ig_json = json.dumps(is_goal)
+
+    inject = f'''
+<link rel="stylesheet" href="/static/css/hud.css">
+<div id="rh-pad"></div>
+<header id="rh-hud">
+  <div class="rh-hud-left">
+    <div class="rh-hud-stat">
+      <span class="rh-hud-icon">⏱</span>
+      <span class="rh-hud-val" id="rh-timer">00:00</span>
+    </div>
+    <div class="rh-hud-stat">
+      <span class="rh-hud-icon">🔗</span>
+      <span class="rh-hud-val" id="rh-hops">0</span>
+    </div>
+  </div>
+  <div class="rh-hud-center">
+    <span class="rh-hud-goal-label">목표</span>
+    <span class="rh-hud-goal" id="rh-goal">—</span>
+  </div>
+  <div class="rh-hud-right">
+    <button class="rh-btn" onclick="rhTogglePath()">경로</button>
+    <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()">포기</button>
+  </div>
+</header>
+
+<div id="rh-path-panel" style="display:none">
+  <div id="rh-path-content"><span class="rh-path-item">이동 경로 없음</span></div>
+</div>
+
+<div id="rh-victory" style="display:none">
+  <div class="rh-v-card">
+    <div class="rh-v-icon">🎉</div>
+    <div class="rh-v-title">목표 달성!</div>
+    <div class="rh-v-stats">
+      <div class="rh-v-stat">
+        <div class="rh-v-stat-label">소요 시간</div>
+        <div class="rh-v-stat-val" id="rh-v-time">—</div>
+      </div>
+      <div class="rh-v-stat">
+        <div class="rh-v-stat-label">이동 횟수</div>
+        <div class="rh-v-stat-val" id="rh-v-hops">—</div>
+      </div>
+    </div>
+    <div>
+      <div class="rh-v-path-label">이동 경로</div>
+      <div class="rh-v-path" id="rh-v-path"></div>
+    </div>
+    <div>
+      <div class="rh-rank-title">🏆 랭킹에 등록하기</div>
+      <div id="rh-rank-row" class="rh-rank-row">
+        <input type="text" id="rh-nickname" class="rh-rank-input"
+               placeholder="닉네임 (최대 20자)" maxlength="20" autocomplete="off">
+        <button class="rh-rank-submit" id="rh-rank-btn" onclick="rhSubmitRank()">등록</button>
+      </div>
+      <div class="rh-rank-result" id="rh-rank-result" style="display:none"></div>
+    </div>
+    <div class="rh-v-actions">
+      <button class="rh-v-btn rh-v-btn-primary" onclick="rhPlayAgain()">다시 하기</button>
+      <button class="rh-v-btn rh-v-btn-secondary" onclick="rhShare()">공유하기 📤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PAGE_TITLE = {t_json};
+const GOAL       = {g_json};
+const IS_GOAL    = {ig_json};
+</script>
+<script src="/static/js/proxy.js"></script>
+'''
+
+    if '</body>' in html:
+        html = html.replace('</body>', inject + '</body>', 1)
+    else:
+        html += inject
+
+    return html
 
 
 def get_page_links(title: str):
@@ -455,7 +603,14 @@ def page(title):
     title = unquote(title)
     goal  = request.args.get('goal', '')
 
-    # 웹 폴백: Playwright로 실제 페이지 링크 추출
+    # 1차: 전체 HTML 프록시 (실제 나무위키 페이지 표시)
+    if _wiki_fetcher is None:
+        html = get_page_html(title)
+        if html is not None:
+            return build_proxy_html(html, title, goal), 200, \
+                   {'Content-Type': 'text/html; charset=utf-8'}
+
+    # 2차 폴백: 링크 목록 UI
     if _wiki_fetcher is not None:
         content = _wiki_fetcher(title)
         links   = parse_internal_links(content) if content else []
