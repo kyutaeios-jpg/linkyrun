@@ -280,9 +280,8 @@ def _pw_fetch_wiki(ctx, title: str):
     pg = ctx.new_page()
     try:
         _pw_stealth(pg)
-        pg.goto(f'https://namu.wiki/w/{quote(title)}',
-                wait_until='domcontentloaded', timeout=35000)
-        # CF 챌린지 감지 (URL 또는 타이틀)
+        url = f'https://namu.wiki/w/{quote(title)}'
+        pg.goto(url, wait_until='domcontentloaded', timeout=35000)
         page_title = (pg.title() or '').lower()
         page_url   = pg.url
         print(f'[PW] {title}: url={page_url}  title={pg.title()!r}', flush=True)
@@ -294,11 +293,14 @@ def _pw_fetch_wiki(ctx, title: str):
             except Exception:
                 print(f'[PW] {title}: CF 미해결', flush=True)
                 return None
-        # React SPA가 콘텐츠 렌더링할 때까지 대기
+            # CF 클리어런스 쿠키 획득 후 실제 페이지 재로드
+            pg.goto(url, wait_until='domcontentloaded', timeout=25000)
+            print(f'[PW] {title}: 재로드 완료 → {pg.url}', flush=True)
+        # React SPA 렌더링 대기
         try:
             pg.wait_for_load_state('networkidle', timeout=10000)
         except Exception:
-            pass  # networkidle 실패해도 계속 시도
+            pass
         pg.wait_for_selector('a[href^="/w/"]', timeout=20000)
         html = pg.content()
         print(f'[PW] {title}: OK {len(html)}B', flush=True)
