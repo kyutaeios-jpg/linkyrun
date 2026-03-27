@@ -37,6 +37,57 @@ EXCLUDED_PREFIXES = [
     '특수기능:', 'Special:', '도움말:', 'Help:',
 ]
 
+# 위키별 설정
+WIKI_CONFIGS = {
+    'namu': {
+        'name':          '나무위키',
+        'base_url':      'https://namu.wiki/w/',
+        'host':          'namu.wiki',
+        'link_prefix':   '/w/',
+        'link_selector': 'a[href^="/w/"]',
+    },
+    'ko': {
+        'name':          '위키백과 (한국어)',
+        'base_url':      'https://ko.wikipedia.org/wiki/',
+        'host':          'ko.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['위키백과:', '위키낱말사전:', '위키문헌:', '토론:', '사용자:', '특수:', '도움말:', '포털:', '파일:', '분류:'],
+    },
+    'en': {
+        'name':          'Wikipedia (English)',
+        'base_url':      'https://en.wikipedia.org/wiki/',
+        'host':          'en.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipedia:', 'Talk:', 'User:', 'Special:', 'Help:', 'Portal:', 'File:', 'Category:', 'Template:', 'MediaWiki:'],
+    },
+    'de': {
+        'name':          'Wikipedia (Deutsch)',
+        'base_url':      'https://de.wikipedia.org/wiki/',
+        'host':          'de.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipedia:', 'Diskussion:', 'Benutzer:', 'Spezial:', 'Hilfe:', 'Portal:', 'Datei:', 'Kategorie:', 'Vorlage:'],
+    },
+    'fr': {
+        'name':          'Wikipédia (Français)',
+        'base_url':      'https://fr.wikipedia.org/wiki/',
+        'host':          'fr.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipédia:', 'Discussion:', 'Utilisateur:', 'Spécial:', 'Aide:', 'Portail:', 'Fichier:', 'Catégorie:', 'Modèle:'],
+    },
+    'ja': {
+        'name':          'ウィキペディア (日本語)',
+        'base_url':      'https://ja.wikipedia.org/wiki/',
+        'host':          'ja.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipedia:', 'ウィキペディア:', 'ノート:', '利用者:', '特別:', 'ヘルプ:', 'Portal:', 'ファイル:', 'カテゴリ:', 'Template:'],
+    },
+}
+
 POPULAR_PAGES = [
     "대한민국", "서울특별시", "부산광역시", "고양이", "개", "피자", "축구", "야구",
     "마인크래프트", "포켓몬스터", "BTS", "방탄소년단", "블랙핑크", "아이유",
@@ -275,28 +326,28 @@ def _playwright_thread():
         print(f'[PW-thread] 초기화 실패: {e}', flush=True)
 
 
-def _pw_fetch_wiki(ctx, title: str):
-    """Playwright로 나무위키 페이지 로드 — CF 처리 포함. ctx 스레드에서 호출."""
+def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
+    """Playwright로 위키 페이지 로드 — CF 처리 포함. ctx 스레드에서 호출."""
+    cfg = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
     pg = ctx.new_page()
     try:
         _pw_stealth(pg)
-        url = f'https://namu.wiki/w/{quote(title)}'
+        url = cfg['base_url'] + quote(title)
         pg.goto(url, wait_until='domcontentloaded', timeout=35000)
         page_title = (pg.title() or '').lower()
         page_url   = pg.url
-        print(f'[PW] {title}: url={page_url}  title={pg.title()!r}', flush=True)
+        print(f'[PW:{wiki}] {title}: url={page_url}  title={pg.title()!r}', flush=True)
         if '__cf_chl' in page_url or 'just a moment' in page_title:
-            print(f'[PW] {title}: CF challenge 감지, 대기 중…', flush=True)
+            print(f'[PW:{wiki}] {title}: CF challenge 감지, 대기 중…', flush=True)
             try:
                 pg.wait_for_url(lambda u: '__cf_chl' not in u, timeout=22000)
-                print(f'[PW] {title}: CF 통과 → {pg.url}', flush=True)
+                print(f'[PW:{wiki}] {title}: CF 통과 → {pg.url}', flush=True)
             except Exception:
-                print(f'[PW] {title}: CF 미해결', flush=True)
+                print(f'[PW:{wiki}] {title}: CF 미해결', flush=True)
                 return None
-        # wait_for_url 후 브라우저는 이미 위키 페이지에 있음 — 바로 selector 대기
-        pg.wait_for_selector('a[href^="/w/"]', timeout=25000)
+        pg.wait_for_selector(cfg['link_selector'], timeout=25000)
         html = pg.content()
-        print(f'[PW] {title}: OK {len(html)}B', flush=True)
+        print(f'[PW:{wiki}] {title}: OK {len(html)}B', flush=True)
         return html
     finally:
         pg.close()
@@ -319,49 +370,68 @@ def _do_warmup(ctx):
 threading.Thread(target=_playwright_thread, daemon=True).start()
 
 
-def get_page_html(title: str):
-    """Playwright 전용 스레드를 통해 나무위키 전체 페이지 HTML 반환."""
+def get_page_html(title: str, wiki: str = 'namu'):
+    """Playwright 전용 스레드를 통해 위키 전체 페이지 HTML 반환."""
+    cache_key = f'{wiki}:{title}'
     now = _time.time()
-    if title in _html_cache:
-        html, ts = _html_cache[title]
+    if cache_key in _html_cache:
+        html, ts = _html_cache[cache_key]
         if now - ts < CACHE_TTL:
             return html
 
     def _fetch(ctx):
-        html = _pw_fetch_wiki(ctx, title)
+        html = _pw_fetch_wiki(ctx, title, wiki)
         if html:
-            _html_cache[title] = (html, _time.time())
+            _html_cache[cache_key] = (html, _time.time())
         return html
 
     return _call_pw(_fetch)
 
 
-def build_proxy_html(wiki_html: str, title: str, goal: str) -> str:
-    """나무위키 HTML을 게임 프록시 페이지로 변환."""
+def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') -> str:
+    """위키 HTML을 게임 프록시 페이지로 변환."""
+    cfg      = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
+    host     = cfg['host']
+    prefix   = cfg['link_prefix']   # '/w/' or '/wiki/'
     goal_enc = quote(goal, safe='')
+    wiki_enc = quote(wiki, safe='')
     is_goal  = bool(goal) and title.strip() == goal.strip()
 
-    # 1. namu.wiki SPA 스크립트 제거 (재실행 방지)
+    # 1. SPA 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
 
-    # 2. /w/ 내부 링크 → 프록시 경로
-    def rewrite_link(m):
-        raw  = m.group(1)                            # e.g. /w/%EA%B3%...
-        part = raw[3:].split('#')[0].split('?')[0]   # title only
-        return f'href="/page/{part}?goal={goal_enc}"'
-    html = re.sub(r'href="(/w/[^"]*)"', rewrite_link, html)
+    # 2. lazy-load 이미지: data-src → src
+    def fix_lazy(m):
+        tag, attrs = m.group(1), m.group(2)
+        # 기존 src="" (placeholder) 제거 후 data-src 값을 src로 승격
+        attrs_clean = re.sub(r'\s+src="[^"]*"', '', attrs)
+        data_src = re.search(r'data-src="([^"]*)"', m.group(0))
+        if data_src:
+            attrs_clean = re.sub(r'\s+data-src="[^"]*"', '', attrs_clean)
+            attrs_clean += f' src="{data_src.group(1)}"'
+        return f'<{tag}{attrs_clean}>'
+    html = re.sub(r'<(img)(\b[^>]*?\bdata-src="[^"]*"[^>]*)>', fix_lazy, html)
 
-    # 3. 나머지 상대 URL (//는 제외, /page/ 도 제외) → 절대 URL
+    # 3. 내부 위키 링크 → 프록시 경로
+    def rewrite_link(m):
+        raw  = m.group(1)                               # e.g. /w/제목 or /wiki/Title
+        part = raw[len(prefix):].split('#')[0].split('?')[0]
+        return f'href="/page/{part}?goal={goal_enc}&wiki={wiki_enc}"'
+    escaped_prefix = re.escape(prefix)
+    html = re.sub(rf'href="({escaped_prefix}[^"]*)"', rewrite_link, html)
+
+    # 4. 나머지 상대 URL → 절대 URL (protocol-relative // 제외, /page/ 제외)
     html = re.sub(
         r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
-        lambda m: f'{m.group(1)}="https://namu.wiki{m.group(2)}"',
+        lambda m: f'{m.group(1)}="https://{host}{m.group(2)}"',
         html,
     )
 
-    # 4. HUD + 스크립트 주입
+    # 5. HUD + 스크립트 주입
     t_json  = json.dumps(title)
     g_json  = json.dumps(goal)
     ig_json = json.dumps(is_goal)
+    w_json  = json.dumps(wiki)
 
     inject = f'''
 <link rel="stylesheet" href="/static/css/hud.css">
@@ -429,6 +499,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str) -> str:
 const PAGE_TITLE = {t_json};
 const GOAL       = {g_json};
 const IS_GOAL    = {ig_json};
+const WIKI       = {w_json};
 </script>
 <script src="/static/js/proxy.js"></script>
 '''
@@ -765,16 +836,19 @@ def api_search():
 def page(title):
     title = unquote(title)
     goal  = request.args.get('goal', '')
+    wiki  = request.args.get('wiki', 'namu')
+    if wiki not in WIKI_CONFIGS:
+        wiki = 'namu'
 
     # 1차: Playwright 전체 HTML 프록시
-    wiki_html = get_page_html(title)
+    wiki_html = get_page_html(title, wiki)
     if wiki_html:
-        proxy_html = build_proxy_html(wiki_html, title, goal)
+        proxy_html = build_proxy_html(wiki_html, title, goal, wiki)
         return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
-    # 2차: 링크 목록 UI 폴백
+    # 2차: 링크 목록 UI 폴백 (namu 전용)
     is_goal = bool(goal) and title.strip() == goal.strip()
-    links = get_page_links(title) or []
+    links = get_page_links(title) or [] if wiki == 'namu' else []
     error = not links
     status = 404 if error else 200
     return render_template('page.html',

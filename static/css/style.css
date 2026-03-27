@@ -1055,3 +1055,44 @@ kbd {
     .hud-goal-label { display: none; }
     .links-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Wiki selection screen ───────────────────────────────── */
+.wiki-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.wiki-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 18px 10px;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition),
+                transform var(--transition), box-shadow var(--transition);
+    text-align: center;
+}
+.wiki-card:hover {
+    border-color: var(--primary);
+    background: rgba(139,92,246,0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+.wiki-card:active { transform: translateY(0); }
+.wiki-card-active {
+    border-color: var(--primary) !important;
+    background: rgba(139,92,246,0.1) !important;
+}
+
+.wiki-flag  { font-size: 1.8rem; line-height: 1; }
+.wiki-name  { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.wiki-lang  { font-size: 0.7rem; color: var(--text-muted); }
+
+@media (max-width: 400px) {
+    .wiki-grid { grid-template-columns: 1fr 1fr; }
+}

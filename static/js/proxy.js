@@ -130,7 +130,7 @@
         try { await navigator.clipboard.writeText(text); alert('결과가 복사되었습니다! 📋'); } catch (_) { alert(text); }
     };
 
-    // 나무위키 내부 링크 클릭 처리 (/page/ 경로로 리라우팅된 링크)
+    // 내부 링크 클릭 처리 (/page/ 경로로 리라우팅된 링크)
     document.addEventListener('click', function (e) {
         const a = e.target.closest('a');
         if (!a) return;
