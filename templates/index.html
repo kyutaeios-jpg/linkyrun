@@ -120,6 +120,34 @@
 
         <main class="container diff-container">
 
+            <!-- 랜덤 게임 -->
+            <div class="card">
+                <div class="section-title">랜덤 게임</div>
+                <p class="diff-desc">난이도를 고르면 페이지가 자동으로 배정됩니다.</p>
+                <div class="diff-grid">
+                    <button class="diff-card diff-easy" data-difficulty="easy">
+                        <span class="diff-card-icon">🟢</span>
+                        <span class="diff-card-name">쉬움</span>
+                        <span class="diff-card-detail">인기 페이지</span>
+                    </button>
+                    <button class="diff-card diff-medium" data-difficulty="medium">
+                        <span class="diff-card-icon">🟡</span>
+                        <span class="diff-card-name">보통</span>
+                        <span class="diff-card-detail">중간 페이지</span>
+                    </button>
+                    <button class="diff-card diff-hard" data-difficulty="hard">
+                        <span class="diff-card-icon">🟠</span>
+                        <span class="diff-card-name">어려움</span>
+                        <span class="diff-card-detail">마니아용</span>
+                    </button>
+                    <button class="diff-card diff-very-hard" data-difficulty="very_hard">
+                        <span class="diff-card-icon">🔴</span>
+                        <span class="diff-card-name">매우 어려움</span>
+                        <span class="diff-card-detail">고수 도전</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- 직접 입력 -->
             <div class="card custom-card">
                 <div class="section-title">직접 설정</div>
@@ -155,34 +183,6 @@
             </div>
 
             <datalist id="page-suggestions"></datalist>
-
-            <!-- 랜덤 게임 -->
-            <div class="card">
-                <div class="section-title">랜덤 게임</div>
-                <p class="diff-desc">난이도를 고르면 페이지가 자동으로 배정됩니다.</p>
-                <div class="diff-grid">
-                    <button class="diff-card diff-easy" data-difficulty="easy">
-                        <span class="diff-card-icon">🟢</span>
-                        <span class="diff-card-name">쉬움</span>
-                        <span class="diff-card-detail">인기 페이지</span>
-                    </button>
-                    <button class="diff-card diff-medium" data-difficulty="medium">
-                        <span class="diff-card-icon">🟡</span>
-                        <span class="diff-card-name">보통</span>
-                        <span class="diff-card-detail">중간 페이지</span>
-                    </button>
-                    <button class="diff-card diff-hard" data-difficulty="hard">
-                        <span class="diff-card-icon">🟠</span>
-                        <span class="diff-card-name">어려움</span>
-                        <span class="diff-card-detail">마니아용</span>
-                    </button>
-                    <button class="diff-card diff-very-hard" data-difficulty="very_hard">
-                        <span class="diff-card-icon">🔴</span>
-                        <span class="diff-card-name">매우 어려움</span>
-                        <span class="diff-card-detail">고수 도전</span>
-                    </button>
-                </div>
-            </div>
 
         </main>
     </div>
