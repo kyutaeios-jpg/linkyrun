@@ -482,7 +482,7 @@ def _playwright_thread():
     try:
         pw  = sync_playwright().start()
         ctx = pw.chromium.launch_persistent_context(
-            user_data_dir='/tmp/rabbit-hole-pw',
+            user_data_dir='/tmp/linky-run-pw',
             headless=True,
             args=[
                 '--no-sandbox', '--disable-setuid-sandbox',

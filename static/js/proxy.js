@@ -154,8 +154,8 @@
         if (!gs) return;
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
         const path = (gs.path || []).join(' → ');
-        const text = `🐇 Rabbit Hole\n${gs.start} → ${gs.goal}\n⏱ ${fmt(elapsed)}  🔗 ${gs.hops}회\n경로: ${path}`;
-        if (navigator.share) { try { await navigator.share({ title: 'Rabbit Hole', text }); return; } catch (_) { } }
+        const text = `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${fmt(elapsed)}  🔗 ${gs.hops}회\n경로: ${path}`;
+        if (navigator.share) { try { await navigator.share({ title: 'Linky Run', text }); return; } catch (_) { } }
         try { await navigator.clipboard.writeText(text); alert('결과가 복사되었습니다! 📋'); } catch (_) { alert(text); }
     };
 

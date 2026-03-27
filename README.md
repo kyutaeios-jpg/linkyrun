@@ -1,4 +1,4 @@
-# 🐇 Rabbit Hole
+# 🔗 Linky Run
 
 위키 링크를 타고 목표 페이지까지 도달하는 스피드런 게임.
 나무위키, 한국어/영어/독일어/프랑스어/일본어 위키백과를 지원합니다.
@@ -46,7 +46,7 @@
 ## 프로젝트 구조
 
 ```
-rabbit-hole/
+linky-run/
 ├── app.py                  # Flask 앱 (메인 서버)
 ├── requirements.txt        # Python 의존성
 ├── Dockerfile              # Railway 배포용 컨테이너
@@ -210,19 +210,19 @@ gunicorn app:app --workers 1 --threads 4 --timeout 120
 
 ### 서비스 구성
 
-- **Rabbit-Hole**: 메인 앱 (Dockerfile 기반)
+- **Linky-Run**: 메인 앱 (Dockerfile 기반)
 - **PostgreSQL**: Railway 기본 제공 DB 서비스 (DATABASE_URL 자동 주입)
 
 ### 배포 명령
 
 ```bash
-railway up --detach --service "Rabbit-Hole"
+railway up --detach --service "Linky-Run"
 ```
 
 ### 로그 확인
 
 ```bash
-railway logs --service "Rabbit-Hole"
+railway logs --service "Linky-Run"
 ```
 
 ### Dockerfile 구성
