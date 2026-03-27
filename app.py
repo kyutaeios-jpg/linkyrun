@@ -517,17 +517,10 @@ def _is_cf_page(pg):
     """현재 페이지가 CF 챌린지 페이지인지 확인."""
     title = (pg.title() or '').lower()
     url   = pg.url
-    if 'just a moment' in title or '보안 확인' in title:
-        return True
     if '__cf_chl' in url:
         return True
-    # HTML 내용으로도 확인
-    try:
-        body_text = pg.locator('body').inner_text(timeout=2000)
-        if 'cf-browser-verification' in body_text or '보안 확인 수행 중' in body_text:
-            return True
-    except Exception:
-        pass
+    if 'just a moment' in title or '보안 확인' in title or '잠시만' in title:
+        return True
     return False
 
 
@@ -548,10 +541,10 @@ def _pw_fetch_wiki(ctx, title: str, wiki: str = 'namu'):
                 # 타이틀이 CF 관련 문구에서 벗어날 때까지 대기
                 pg.wait_for_function(
                     """() => {
-                        const t = document.title.toLowerCase();
-                        return !t.includes('just a moment') && !t.includes('보안 확인') && t.length > 0;
+                        const t = document.title;
+                        return t.length > 0 && !t.includes('Just a moment') && !t.includes('보안 확인') && !t.includes('잠시만');
                     }""",
-                    timeout=35000
+                    timeout=45000
                 )
                 # 추가로 networkidle 대기 (JS 리다이렉트 완료)
                 try:
