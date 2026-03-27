@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN mkdir -p /data
+
 ENV DB_PATH=/data/rankings.db
 
 # 단일 워커 + 멀티 스레드 (Playwright 인스턴스 공유)
