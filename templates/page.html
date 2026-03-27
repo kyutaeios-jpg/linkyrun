@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ title }} — 나무위키 스피드런</title>
+    <meta name="theme-color" content="#00b894">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="game-page">
+
+    <!-- ── HUD ──────────────────────────────────── -->
+    <header class="hud" id="hud">
+        <div class="hud-left">
+            <div class="hud-stat" title="경과 시간">
+                <span class="hud-icon">⏱</span>
+                <span class="hud-value mono" id="timer-display">00:00</span>
+            </div>
+            <div class="hud-stat" title="이동 횟수">
+                <span class="hud-icon">🔗</span>
+                <span class="hud-value mono" id="hops-display">0</span>
+            </div>
+        </div>
+
+        <div class="hud-center">
+            <span class="hud-goal-label">목표</span>
+            <span class="hud-goal" id="goal-display">—</span>
+        </div>
+
+        <div class="hud-right">
+            <button class="hud-btn" id="path-toggle-btn" onclick="togglePath()">경로</button>
+            <button class="hud-btn hud-btn-danger" onclick="giveUp()">포기</button>
+        </div>
+    </header>
+
+    <!-- ── Path panel ────────────────────────────── -->
+    <div class="path-panel" id="path-panel" hidden>
+        <div class="path-scroll" id="path-content">
+            <span class="path-empty">이동 경로 없음</span>
+        </div>
+    </div>
+
+    <!-- ── Main ──────────────────────────────────── -->
+    <main class="game-main">
+
+        {% if error %}
+        <div class="error-box">
+            <div class="error-emoji">😶‍🌫️</div>
+            <h2>페이지를 찾을 수 없습니다</h2>
+            <p>「<strong>{{ title }}</strong>」 페이지가 존재하지 않거나 접근할 수 없습니다.</p>
+            <button onclick="history.back()" class="btn-secondary">← 뒤로</button>
+        </div>
+        {% else %}
+
+        <div class="page-header">
+            <h1 class="page-title">{{ title }}</h1>
+            <a href="https://namu.wiki/w/{{ title | encode_uri }}"
+               target="_blank" rel="noopener"
+               class="wiki-ext-link" title="나무위키에서 원문 보기">
+                나무위키 ↗
+            </a>
+        </div>
+
+        {% if links %}
+        <div class="link-toolbar">
+            <div class="link-search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="link-filter"
+                       class="link-search"
+                       placeholder="링크 검색… (단축키: /)"
+                       autocomplete="off" spellcheck="false"
+                       oninput="filterLinks(this.value)">
+            </div>
+            <span class="link-count" id="link-count">{{ links|length }}개</span>
+        </div>
+
+        <div class="links-grid" id="links-grid">
+            {% for link in links %}
+            <a class="link-card"
+               href="#"
+               data-title="{{ link.title }}"
+               data-goal="{{ goal }}">{{ link.display }}</a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-links">
+            <p>이 페이지에는 내부 링크가 없습니다.</p>
+            <button onclick="history.back()" class="btn-secondary">← 뒤로</button>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </main>
+
+    <!-- ── Victory overlay ──────────────────────── -->
+    <div class="victory-overlay" id="victory-overlay" hidden>
+        <div class="victory-card">
+            <div class="victory-firework">🎉</div>
+            <h2 class="victory-title">목표 달성!</h2>
+
+            <div class="victory-stats">
+                <div class="victory-stat">
+                    <span class="victory-stat-label">소요 시간</span>
+                    <span class="victory-stat-value mono" id="victory-time">—</span>
+                </div>
+                <div class="victory-stat">
+                    <span class="victory-stat-label">이동 횟수</span>
+                    <span class="victory-stat-value mono" id="victory-hops">—</span>
+                </div>
+            </div>
+
+            <div class="victory-path-wrap">
+                <div class="victory-path-label">이동 경로</div>
+                <div class="victory-path" id="victory-path"></div>
+            </div>
+
+            <div class="victory-ranking-form" id="ranking-form">
+                <div class="ranking-form-title">🏆 랭킹에 등록하기</div>
+                <div class="ranking-form-row" id="ranking-input-row">
+                    <input type="text" id="nickname-input" class="text-input ranking-nickname-input"
+                           placeholder="닉네임 (최대 20자)" maxlength="20" autocomplete="off">
+                    <button class="btn-submit-rank" id="submit-rank-btn" onclick="submitRank()">등록</button>
+                </div>
+                <div class="ranking-result" id="ranking-result" hidden></div>
+            </div>
+
+            <div class="victory-actions">
+                <button class="btn-start" onclick="playAgain()">다시 하기</button>
+                <button class="btn-secondary" onclick="shareResult()">공유하기 📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_TITLE = {{ title | tojson }};
+        const GOAL       = {{ goal  | tojson }};
+        const IS_GOAL    = {{ is_goal | tojson }};
+    </script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

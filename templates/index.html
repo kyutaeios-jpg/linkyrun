@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>나무위키 스피드런</title>
+    <meta name="description" content="나무위키 내부 링크만 클릭해서 목표 페이지에 최단 시간에 도달하는 게임">
+    <meta name="theme-color" content="#00b894">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="나무스피드런">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/icon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="index-page">
+
+    <!-- ══════════════════════════════════════════
+         화면 1: 인트로
+    ══════════════════════════════════════════ -->
+    <div class="screen" id="screen-intro">
+        <header class="hero">
+            <div class="hero-content">
+                <div class="hero-logo">🌳</div>
+                <h1 class="hero-title">나무위키 스피드런</h1>
+                <p class="hero-subtitle">내부 링크만 클릭해서 목표 페이지에 도달하세요!</p>
+            </div>
+        </header>
+
+        <main class="container">
+            <section class="card rules-card">
+                <h3 class="section-title">게임 방법</h3>
+                <ol class="rules-list">
+                    <li>난이도를 선택하면 <strong>시작 페이지</strong>와 <strong>목표 페이지</strong>가 랜덤으로 정해집니다</li>
+                    <li>페이지의 <strong>내부 링크만</strong> 클릭해서 목표까지 이동하세요</li>
+                    <li>최소 클릭 수 · 최단 시간으로 도달하면 승리!</li>
+                    <li>뒤로 가기 · 검색 · 외부 링크 사용 금지</li>
+                </ol>
+                <div class="rules-tip">
+                    💡 <kbd>/</kbd> 키로 링크를 빠르게 검색할 수 있어요
+                </div>
+            </section>
+
+            <button class="btn-start btn-start-big" id="btn-go-difficulty">
+                <span>게임 시작하기</span>
+                <span class="btn-start-icon">▶</span>
+            </button>
+
+            <button class="btn-leaderboard-outline" id="btn-open-lb-intro">
+                🏆 랭킹 보기
+            </button>
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         화면 2: 난이도 선택
+    ══════════════════════════════════════════ -->
+    <div class="screen screen-hidden" id="screen-difficulty">
+        <header class="diff-header">
+            <button class="btn-back" id="btn-back">← 뒤로</button>
+            <h2 class="diff-header-title">난이도 선택</h2>
+            <button class="btn-back-ghost" id="btn-open-lb-diff">🏆 랭킹</button>
+        </header>
+
+        <main class="container diff-container">
+            <p class="diff-desc">난이도를 선택하면 해당 수준의 페이지가 랜덤으로 배정됩니다.</p>
+
+            <div class="diff-grid">
+                <button class="diff-card diff-easy" data-difficulty="easy">
+                    <span class="diff-card-icon">🟢</span>
+                    <span class="diff-card-name">쉬움</span>
+                    <span class="diff-card-detail">역링크 500개 이상<br>누구나 아는 인기 페이지</span>
+                </button>
+                <button class="diff-card diff-medium" data-difficulty="medium">
+                    <span class="diff-card-icon">🟡</span>
+                    <span class="diff-card-name">보통</span>
+                    <span class="diff-card-detail">역링크 100~499개<br>나무위키 입문자에게 추천</span>
+                </button>
+                <button class="diff-card diff-hard" data-difficulty="hard">
+                    <span class="diff-card-icon">🟠</span>
+                    <span class="diff-card-name">어려움</span>
+                    <span class="diff-card-detail">역링크 20~99개<br>나무위키를 자주 본 사람만</span>
+                </button>
+                <button class="diff-card diff-very-hard" data-difficulty="very_hard">
+                    <span class="diff-card-icon">🔴</span>
+                    <span class="diff-card-name">매우 어려움</span>
+                    <span class="diff-card-detail">역링크 20개 미만<br>진정한 나무위키 고수 도전</span>
+                </button>
+            </div>
+
+            <details class="custom-section">
+                <summary class="custom-summary">직접 설정하기 ▾</summary>
+                <div class="card custom-card">
+                    <div class="input-group">
+                        <label class="input-label">
+                            <span class="label-badge start-badge">시작</span>
+                        </label>
+                        <div class="input-row">
+                            <input type="text" id="start-input" class="text-input" placeholder="예: 고양이" autocomplete="off" spellcheck="false">
+                            <button class="btn-random" id="start-random" title="랜덤 페이지">🎲</button>
+                        </div>
+                    </div>
+                    <div class="setup-arrow">↓</div>
+                    <div class="input-group">
+                        <label class="input-label">
+                            <span class="label-badge goal-badge">목표</span>
+                        </label>
+                        <div class="input-row">
+                            <input type="text" id="goal-input" class="text-input" placeholder="예: 인터넷" autocomplete="off" spellcheck="false">
+                            <button class="btn-random" id="goal-random" title="랜덤 페이지">🎲</button>
+                        </div>
+                        <div class="difficulty-row" id="difficulty-badge" hidden>
+                            <span class="diff-dot" id="diff-dot">●</span>
+                            <span class="diff-label" id="diff-label"></span>
+                            <span class="diff-links" id="diff-links"></span>
+                        </div>
+                    </div>
+                    <button class="btn-start" id="btn-custom-start">
+                        <span class="btn-start-text">게임 시작</span>
+                        <span class="btn-start-icon">▶</span>
+                    </button>
+                </div>
+            </details>
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         랭킹 모달
+    ══════════════════════════════════════════ -->
+    <div class="modal-overlay" id="leaderboard-modal" hidden>
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 class="modal-title">🏆 랭킹</h2>
+                <button class="modal-close" id="close-leaderboard">✕</button>
+            </div>
+            <div class="lb-tabs">
+                <button class="lb-tab lb-tab-active" data-difficulty="">전체</button>
+                <button class="lb-tab" data-difficulty="easy">🟢 쉬움</button>
+                <button class="lb-tab" data-difficulty="medium">🟡 보통</button>
+                <button class="lb-tab" data-difficulty="hard">🟠 어려움</button>
+                <button class="lb-tab" data-difficulty="very_hard">🔴 매우 어려움</button>
+            </div>
+            <div id="lb-content" class="lb-content">
+                <div class="lb-empty">탭을 선택해서 랭킹을 확인하세요</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js');
+        }
+
+        /* ── 화면 전환 ──────────────────────────────── */
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('screen-hidden'));
+            document.getElementById(id).classList.remove('screen-hidden');
+        }
+
+        /* ── 난이도 상태 ──────────────────────────── */
+        let currentDifficulty = 'unknown';
+        let diffTimer = null;
+
+        async function fetchDifficulty(title) {
+            if (!title) {
+                document.getElementById('difficulty-badge').hidden = true;
+                currentDifficulty = 'unknown';
+                return;
+            }
+            try {
+                const res  = await fetch(`/api/difficulty/${encodeURIComponent(title)}`);
+                const data = await res.json();
+                currentDifficulty = data.difficulty;
+                document.getElementById('diff-dot').style.color   = data.color;
+                document.getElementById('diff-label').textContent  = data.label;
+                document.getElementById('diff-label').style.color  = data.color;
+                document.getElementById('diff-links').textContent  = data.backlinks != null
+                    ? `(역링크 ${data.backlinks.toLocaleString()}개)`
+                    : '(측정 불가)';
+                document.getElementById('difficulty-badge').hidden = false;
+            } catch {
+                document.getElementById('difficulty-badge').hidden = true;
+            }
+        }
+
+        /* ── 게임 실행 ──────────────────────────────── */
+        async function launchGame(start, goal, difficulty) {
+            if (!start || !goal) return;
+            if (start === goal) { alert('시작과 목표 페이지가 같습니다.'); return; }
+
+            if (window.pywebview) {
+                await window.pywebview.api.start_game(start, goal, difficulty);
+            } else {
+                const gs = {
+                    start, goal, startTime: Date.now(),
+                    path: [start], hops: 0, active: true,
+                    difficulty: difficulty || 'unknown',
+                };
+                localStorage.setItem('namuSpeedrun', JSON.stringify(gs));
+                window.location.href =
+                    `/page/${encodeURIComponent(start)}?goal=${encodeURIComponent(goal)}`;
+            }
+        }
+
+        async function startByDifficulty(difficulty) {
+            const card = document.querySelector(`.diff-card[data-difficulty="${difficulty}"]`);
+            if (card) {
+                card.classList.add('diff-card-loading');
+                card.disabled = true;
+            }
+            try {
+                const res  = await fetch(`/api/random-game?difficulty=${difficulty}`);
+                const data = await res.json();
+                await launchGame(data.start, data.goal, difficulty);
+            } catch (e) {
+                alert('게임을 불러오지 못했습니다. 다시 시도해주세요.');
+            } finally {
+                if (card) { card.classList.remove('diff-card-loading'); card.disabled = false; }
+            }
+        }
+
+        async function randomPage(inputId, btnId) {
+            const btn  = document.getElementById(btnId);
+            const prev = btn.textContent;
+            btn.textContent = '⏳'; btn.disabled = true;
+            try {
+                const res  = await fetch('/api/random?count=1');
+                const data = await res.json();
+                document.getElementById(inputId).value = data.pages[0];
+                if (inputId === 'goal-input') fetchDifficulty(data.pages[0]);
+            } catch (e) { console.error(e); }
+            finally { btn.textContent = prev; btn.disabled = false; }
+        }
+
+        /* ── 랭킹 모달 ──────────────────────────────── */
+        let activeLbDifficulty = '';
+
+        function openLeaderboard(difficulty) {
+            document.getElementById('leaderboard-modal').hidden = false;
+            switchLbTab(difficulty ?? activeLbDifficulty);
+        }
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').hidden = true;
+        }
+
+        function switchLbTab(difficulty) {
+            activeLbDifficulty = difficulty;
+            document.querySelectorAll('.lb-tab').forEach(t => {
+                t.classList.toggle('lb-tab-active', t.dataset.difficulty === difficulty);
+            });
+            loadRanking(difficulty);
+        }
+
+        function fmtMs(ms) {
+            const s = Math.floor(ms / 1000), m = Math.floor(s / 60), ss = s % 60;
+            const cs = Math.floor((ms % 1000) / 10);
+            return m > 0
+                ? `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+                : `${String(ss).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+        }
+        const DIFF_MAP = {
+            easy:      ['쉬움',       '#00b894'],
+            medium:    ['보통',       '#fdcb6e'],
+            hard:      ['어려움',     '#e17055'],
+            very_hard: ['매우 어려움', '#d63031'],
+        };
+        function diffBadgeHtml(d) {
+            const [label, color] = DIFF_MAP[d] || ['?', '#7d8590'];
+            return `<span class="lb-diff" style="color:${color};border-color:${color}40">${label}</span>`;
+        }
+        function esc(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        async function loadRanking(difficulty) {
+            const el = document.getElementById('lb-content');
+            el.innerHTML = '<div class="lb-loading">불러오는 중…</div>';
+            try {
+                const url = difficulty
+                    ? `/api/ranking?difficulty=${encodeURIComponent(difficulty)}&limit=20`
+                    : '/api/ranking?limit=20';
+                const data = await fetch(url).then(r => r.json());
+
+                if (!data.rankings?.length) {
+                    el.innerHTML = '<div class="lb-empty">아직 기록이 없습니다.<br>첫 번째 도전자가 되어보세요! 🏆</div>';
+                    return;
+                }
+
+                const rows = data.rankings.map((r, i) => {
+                    const medal = ['🥇','🥈','🥉'][i] ?? `${i+1}`;
+                    return `<tr>
+                        <td class="lb-rank">${medal}</td>
+                        <td class="lb-nick">${esc(r.nickname)}</td>
+                        <td class="lb-route">${esc(r.start)} → ${esc(r.goal)}</td>
+                        <td class="lb-hops">${r.hops}회</td>
+                        <td class="lb-time">${fmtMs(r.elapsed_ms)}</td>
+                        <td>${diffBadgeHtml(r.difficulty)}</td>
+                    </tr>`;
+                }).join('');
+
+                el.innerHTML = `<table class="lb-table">
+                    <thead><tr>
+                        <th>순위</th><th>닉네임</th><th>경로</th>
+                        <th>이동</th><th>시간</th><th>난이도</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+            } catch {
+                el.innerHTML = '<div class="lb-empty">불러오기 실패</div>';
+            }
+        }
+
+        /* ── 이벤트 연결 ─────────────────────────────── */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 화면 전환
+            document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-difficulty'));
+            document.getElementById('btn-back').addEventListener('click', () => showScreen('screen-intro'));
+
+            // 난이도 카드 클릭
+            document.querySelectorAll('.diff-card').forEach(card => {
+                card.addEventListener('click', () => startByDifficulty(card.dataset.difficulty));
+            });
+
+            // 직접 설정
+            document.getElementById('start-random').addEventListener('click', () => randomPage('start-input', 'start-random'));
+            document.getElementById('goal-random').addEventListener('click', () => randomPage('goal-input', 'goal-random'));
+            document.getElementById('goal-input').addEventListener('input', e => {
+                clearTimeout(diffTimer);
+                diffTimer = setTimeout(() => fetchDifficulty(e.target.value.trim()), 600);
+            });
+            document.getElementById('btn-custom-start').addEventListener('click', () => {
+                const start = document.getElementById('start-input').value.trim();
+                const goal  = document.getElementById('goal-input').value.trim();
+                if (!start) { alert('시작 페이지를 입력해주세요.'); return; }
+                if (!goal)  { alert('목표 페이지를 입력해주세요.'); return; }
+                launchGame(start, goal, currentDifficulty);
+            });
+            document.querySelectorAll('#start-input, #goal-input').forEach(inp => {
+                inp.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') document.getElementById('btn-custom-start').click();
+                });
+            });
+
+            // 랭킹 모달
+            document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard(''));
+            document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard(''));
+            document.getElementById('close-leaderboard').addEventListener('click', closeLeaderboard);
+            document.getElementById('leaderboard-modal').addEventListener('click', e => {
+                if (e.target.id === 'leaderboard-modal') closeLeaderboard();
+            });
+            document.querySelectorAll('.lb-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchLbTab(tab.dataset.difficulty));
+            });
+        });
+    </script>
+</body>
+</html>

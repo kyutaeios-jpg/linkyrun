@@ -1,0 +1,5 @@
+# 데스크탑 앱 전용 (python3 main.py)
+-r requirements.txt
+pywebview>=4.0
+cloudscraper==1.2.71
+requests==2.32.3
