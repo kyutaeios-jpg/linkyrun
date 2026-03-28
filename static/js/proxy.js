@@ -228,11 +228,29 @@
         const wiki    = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
         const hops    = gs.hops;
-        const url = `${window.location.origin}/?challenge=1` +
-            `&start=${encodeURIComponent(gs.start)}` +
-            `&goal=${encodeURIComponent(gs.goal)}` +
-            `&wiki=${encodeURIComponent(wiki)}` +
-            `&hops=${hops}&ms=${Math.round(elapsed)}`;
+
+        // 단축 코드 발급
+        let url;
+        try {
+            const res = await fetch('/api/challenge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start: gs.start, goal: gs.goal, wiki, hops, ms: Math.round(elapsed) })
+            });
+            const data = await res.json();
+            if (data.code) {
+                url = `${window.location.origin}/?c=${data.code}`;
+            }
+        } catch (_) {}
+        // 단축 실패 시 풀 URL 폴백
+        if (!url) {
+            url = `${window.location.origin}/?challenge=1` +
+                `&start=${encodeURIComponent(gs.start)}` +
+                `&goal=${encodeURIComponent(gs.goal)}` +
+                `&wiki=${encodeURIComponent(wiki)}` +
+                `&hops=${hops}&ms=${Math.round(elapsed)}`;
+        }
+
         const text = t('challengeText')(gs, fmt(elapsed), url);
         try {
             await navigator.clipboard.writeText(text);

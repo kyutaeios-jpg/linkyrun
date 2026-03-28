@@ -2,6 +2,7 @@ import os
 import re
 import json
 import random
+import string
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
@@ -552,13 +553,27 @@ def init_db():
             wiki       TEXT    NOT NULL DEFAULT 'namu',
             created_at TEXT    NOT NULL
         )'''
+    challenge_sql = '''CREATE TABLE IF NOT EXISTS challenge_links (
+        code       TEXT    PRIMARY KEY,
+        start_page TEXT    NOT NULL,
+        goal_page  TEXT    NOT NULL,
+        wiki       TEXT    NOT NULL DEFAULT 'namu',
+        hops       INTEGER,
+        ms         INTEGER,
+        created_at TEXT    NOT NULL
+    )'''
     with _db_conn() as conn:
         _execute(conn, create_sql)
+        _execute(conn, challenge_sql)
         if not _USE_PG:
             try:
                 _execute(conn, "ALTER TABLE rankings ADD COLUMN wiki TEXT NOT NULL DEFAULT 'namu'")
             except Exception:
                 pass
+
+def _gen_challenge_code(length=6):
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choices(chars, k=length))
 
 init_db()
 
@@ -1968,6 +1983,46 @@ def api_ranking():
     ]
     return jsonify({'rankings': results, 'difficulty': difficulty, 'wiki': wiki_filter})
 
+
+
+@app.route('/api/challenge', methods=['POST'])
+def api_challenge_create():
+    """도전장 단축 코드 생성."""
+    data = request.get_json(silent=True) or {}
+    start = (data.get('start') or '').strip()
+    goal  = (data.get('goal')  or '').strip()
+    wiki  = (data.get('wiki')  or 'namu').strip()
+    hops  = data.get('hops')
+    ms    = data.get('ms')
+    if not start or not goal:
+        return jsonify({'error': 'missing params'}), 400
+    # 중복 코드 방지를 위해 최대 5회 시도
+    for _ in range(5):
+        code = _gen_challenge_code(6)
+        try:
+            with _db_conn() as conn:
+                _execute(conn, '''INSERT INTO challenge_links
+                    (code, start_page, goal_page, wiki, hops, ms, created_at)
+                    VALUES (?,?,?,?,?,?,?)''' if not _USE_PG else '''INSERT INTO challenge_links
+                    (code, start_page, goal_page, wiki, hops, ms, created_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s)''',
+                    (code, start, goal, wiki, hops, ms, datetime.utcnow().isoformat()))
+            return jsonify({'code': code})
+        except Exception:
+            continue
+    return jsonify({'error': 'code generation failed'}), 500
+
+
+@app.route('/api/challenge/<code>')
+def api_challenge_get(code):
+    """도전장 코드로 파라미터 조회."""
+    with _db_conn() as conn:
+        row = _execute(conn, 'SELECT start_page, goal_page, wiki, hops, ms FROM challenge_links WHERE code=?' if not _USE_PG
+                       else 'SELECT start_page, goal_page, wiki, hops, ms FROM challenge_links WHERE code=%s',
+                       (code,)).fetchone()
+    if not row:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify({'start': row[0], 'goal': row[1], 'wiki': row[2], 'hops': row[3], 'ms': row[4]})
 
 
 @app.route('/api/health')

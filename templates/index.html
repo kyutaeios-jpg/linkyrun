@@ -831,22 +831,12 @@
         }
 
         /* ── 챌린지 배너 ─────────────────────────── */
-        function detectChallengeBanner() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('challenge') !== '1') return;
-            const start = params.get('start');
-            const goal  = params.get('goal');
-            const wiki  = params.get('wiki') || 'namu';
-            const hops  = params.get('hops');
-            const ms    = parseInt(params.get('ms') || '0', 10);
-            if (!start || !goal) return;
-
+        function showChallengeBanner(start, goal, wiki, hops, ms) {
             const banner    = document.getElementById('challenge-banner');
             const titleEl   = document.getElementById('challenge-banner-title');
             const descEl    = document.getElementById('challenge-banner-desc');
             const acceptBtn = document.getElementById('challenge-accept-btn');
             if (!banner) return;
-
             if (titleEl) titleEl.textContent = t('challengeBannerTitle');
             if (descEl) {
                 const routeLine = `${start} → ${goal}`;
@@ -857,11 +847,39 @@
                     (recordLine ? `<br><span style="color:var(--accent,#FF6B35);font-weight:700">${esc(recordLine)}</span>` : '');
             }
             banner.style.display = '';
-
             if (acceptBtn) {
-                acceptBtn.onclick = () => launchGame(start, goal, 'custom');
+                acceptBtn.onclick = () => {
+                    if (wiki && wiki !== selectedWiki) setWiki(wiki);
+                    launchGame(start, goal, 'custom');
+                };
             }
             window.history.replaceState({}, '', '/');
+        }
+
+        function detectChallengeBanner() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('c');
+            if (code) {
+                // 단축 코드: 서버에서 파라미터 조회
+                fetch(`/api/challenge/${encodeURIComponent(code)}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (data && data.start && data.goal) {
+                            showChallengeBanner(data.start, data.goal, data.wiki || 'namu', data.hops, data.ms);
+                        }
+                    })
+                    .catch(() => {});
+                return;
+            }
+            // 레거시 풀 URL 지원
+            if (params.get('challenge') !== '1') return;
+            const start = params.get('start');
+            const goal  = params.get('goal');
+            const wiki  = params.get('wiki') || 'namu';
+            const hops  = params.get('hops');
+            const ms    = parseInt(params.get('ms') || '0', 10);
+            if (!start || !goal) return;
+            showChallengeBanner(start, goal, wiki, hops, ms);
         }
 
         /* ── 이벤트 연결 ─────────────────────────── */
