@@ -19,7 +19,9 @@
     <style>
         /* 언어 선택 버튼 */
         .lang-selector {
-            position: absolute; top: 16px; right: 16px;
+            position: absolute;
+            top: calc(16px + env(safe-area-inset-top));
+            right: 16px;
             z-index: 100;
         }
         .lang-btn {
