@@ -863,7 +863,32 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
         rewrite_link, html
     )
 
-    # 4. 나머지 상대 URL → 절대 URL (protocol-relative // 제외, /page/ 제외)
+    # 4-a. 나무위키 CDN 이미지 URL → Worker 프록시 (핫링크 차단 우회)
+    if wiki == 'namu':
+        def _proxy_img(raw: str) -> str:
+            if raw.startswith('//'):
+                raw = 'https:' + raw
+            return (WORKER_URL + '?' +
+                    quote(f'token={WORKER_TOKEN}&type=image&url={raw}', safe='=&'))
+
+        # src / data-src 속성의 namu CDN URL 교체
+        html = re.sub(
+            r'((?:src|data-src)=")((https?:)?//[a-z0-9\-]+\.namu\.la/[^"]*)"',
+            lambda m: m.group(1) + _proxy_img(m.group(2)) + '"',
+            html,
+        )
+        # srcset 속성 내 각 URL 교체
+        def _rewrite_srcset(m):
+            def _px(sm):
+                return _proxy_img(sm.group(0))
+            new_val = re.sub(r'(https?:)?//[a-z0-9\-]+\.namu\.la/\S+', _px, m.group(1))
+            return f'srcset="{new_val}"'
+        html = re.sub(
+            r'srcset="([^"]*(?:https?:)?//[a-z0-9\-]+\.namu\.la/[^"]*)"',
+            _rewrite_srcset, html,
+        )
+
+    # 4-b. 나머지 상대 URL → 절대 URL (/page/ 제외)
     html = re.sub(
         r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
         lambda m: f'{m.group(1)}="https://{host}{m.group(2)}"',

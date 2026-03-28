@@ -30,6 +30,42 @@ export default {
       }
     }
 
+    // 이미지 프록시 (나무위키 CDN 핫링크 차단 우회)
+    if (type === 'image') {
+      const imageUrl = url.searchParams.get('url');
+      if (!imageUrl) return new Response('Missing url', { status: 400 });
+
+      // 허용 도메인: *.namu.la 만 허용
+      let parsed;
+      try { parsed = new URL(imageUrl); }
+      catch (_) { return new Response('Invalid url', { status: 400 }); }
+      if (!parsed.hostname.endsWith('.namu.la') && parsed.hostname !== 'namu.la') {
+        return new Response('Forbidden', { status: 403 });
+      }
+
+      try {
+        const response = await fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Language': 'ko-KR,ko;q=0.9',
+            'Referer': 'https://namu.wiki/',
+          },
+        });
+        const body = await response.arrayBuffer();
+        return new Response(body, {
+          status: response.status,
+          headers: {
+            'Content-Type': response.headers.get('Content-Type') || 'image/jpeg',
+            'Cache-Control': 'public, max-age=86400',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (e) {
+        return new Response(`Error: ${e.message}`, { status: 502 });
+      }
+    }
+
     // 역링크 수 조회 (나무위키 backlink API)
     if (type === 'backlink') {
       const title = url.searchParams.get('title');
