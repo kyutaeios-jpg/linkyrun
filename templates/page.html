@@ -11,37 +11,48 @@
     <link rel="icon" href="/static/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/style.css?v={{ ver }}">
+    <script src="/static/js/i18n.js?v={{ ver }}"></script>
+    <script>
+        // 위키 결정: URL 파라미터 → localStorage → 기본값 namu
+        (function () {
+            const p = new URLSearchParams(location.search).get('wiki') || 'namu';
+            // 위키 키를 i18n 언어 키로 변환 (ko → namu)
+            const WIKI_TO_LANG = { namu: 'namu', ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+            window._WIKI = WIKI_TO_LANG[p] || 'namu';
+            window._GAME_WIKI = p;
+        }());
+    </script>
 </head>
 <body class="game-page">
 
     <!-- ── HUD ──────────────────────────────────── -->
     <header class="hud" id="hud">
         <div class="hud-left">
-            <div class="hud-stat" title="경과 시간">
+            <div class="hud-stat" data-i18n-title="statTime">
                 <span class="hud-icon">⏱</span>
                 <span class="hud-value mono" id="timer-display">00:00</span>
             </div>
-            <div class="hud-stat" title="이동 횟수">
+            <div class="hud-stat" data-i18n-title="statHops">
                 <span class="hud-icon">🔗</span>
                 <span class="hud-value mono" id="hops-display">0</span>
             </div>
         </div>
 
         <div class="hud-center">
-            <span class="hud-goal-label">목표</span>
+            <span class="hud-goal-label" data-i18n="hudGoalLabel">목표</span>
             <span class="hud-goal" id="goal-display">—</span>
         </div>
 
         <div class="hud-right">
-            <button class="hud-btn" id="path-toggle-btn" onclick="togglePath()">경로</button>
-            <button class="hud-btn hud-btn-danger" onclick="giveUp()">포기</button>
+            <button class="hud-btn" id="path-toggle-btn" onclick="togglePath()" data-i18n="btnPath">경로</button>
+            <button class="hud-btn hud-btn-danger" onclick="giveUp()" data-i18n="btnGiveUp">포기</button>
         </div>
     </header>
 
     <!-- ── Path panel ────────────────────────────── -->
     <div class="path-panel" id="path-panel" hidden>
         <div class="path-scroll" id="path-content">
-            <span class="path-empty">이동 경로 없음</span>
+            <span class="path-empty" data-i18n="pathEmpty">이동 경로 없음</span>
         </div>
     </div>
 
@@ -51,19 +62,19 @@
         {% if error %}
         <div class="error-box">
             <div class="error-emoji">😶‍🌫️</div>
-            <h2>페이지를 찾을 수 없습니다</h2>
-            <p>「<strong>{{ title }}</strong>」 페이지가 존재하지 않거나 접근할 수 없습니다.</p>
-            <button onclick="history.back()" class="btn-secondary">← 뒤로</button>
+            <h2 data-i18n="errorTitle">페이지를 찾을 수 없습니다</h2>
+            <p>「<strong>{{ title }}</strong>」 <span data-i18n="errorDesc">페이지가 존재하지 않거나 접근할 수 없습니다.</span></p>
+            <button onclick="history.back()" class="btn-secondary" data-i18n="btnBack">← 뒤로</button>
         </div>
         {% else %}
 
         <div class="page-header">
             <h1 class="page-title">{{ title }}</h1>
-            <a href="https://namu.wiki/w/{{ title | encode_uri }}"
+            <a href="{{ wiki_url }}"
                target="_blank" rel="noopener"
-               class="wiki-ext-link" title="나무위키에서 원문 보기">
-                나무위키 ↗
-            </a>
+               class="wiki-ext-link"
+               data-i18n="wikiExtLabel"
+               data-i18n-title="wikiExtTitle">나무위키 ↗</a>
         </div>
 
         {% if links %}
@@ -72,11 +83,12 @@
                 <span class="search-icon">🔍</span>
                 <input type="text" id="link-filter"
                        class="link-search"
+                       data-i18n-placeholder="linkSearchPlaceholder"
                        placeholder="링크 검색… (단축키: /)"
                        autocomplete="off" spellcheck="false"
                        oninput="filterLinks(this.value)">
             </div>
-            <span class="link-count" id="link-count">{{ links|length }}개</span>
+            <span class="link-count" id="link-count" data-total="{{ links|length }}">{{ links|length }}</span>
         </div>
 
         <div class="links-grid" id="links-grid">
@@ -89,8 +101,8 @@
         </div>
         {% else %}
         <div class="empty-links">
-            <p>이 페이지에는 내부 링크가 없습니다.</p>
-            <button onclick="history.back()" class="btn-secondary">← 뒤로</button>
+            <p data-i18n="emptyLinks">이 페이지에는 내부 링크가 없습니다.</p>
+            <button onclick="history.back()" class="btn-secondary" data-i18n="btnBack">← 뒤로</button>
         </div>
         {% endif %}
 
@@ -101,37 +113,38 @@
     <div class="victory-overlay" id="victory-overlay" hidden>
         <div class="victory-card">
             <div class="victory-firework">🎉</div>
-            <h2 class="victory-title">목표 달성!</h2>
+            <h2 class="victory-title" data-i18n="victoryTitle">목표 달성!</h2>
 
             <div class="victory-stats">
                 <div class="victory-stat">
-                    <span class="victory-stat-label">소요 시간</span>
+                    <span class="victory-stat-label" data-i18n="statTime">소요 시간</span>
                     <span class="victory-stat-value mono" id="victory-time">—</span>
                 </div>
                 <div class="victory-stat">
-                    <span class="victory-stat-label">이동 횟수</span>
+                    <span class="victory-stat-label" data-i18n="statHops">이동 횟수</span>
                     <span class="victory-stat-value mono" id="victory-hops">—</span>
                 </div>
             </div>
 
             <div class="victory-path-wrap">
-                <div class="victory-path-label">이동 경로</div>
+                <div class="victory-path-label" data-i18n="pathLabel">이동 경로</div>
                 <div class="victory-path" id="victory-path"></div>
             </div>
 
             <div class="victory-ranking-form" id="ranking-form">
-                <div class="ranking-form-title">🏆 랭킹에 등록하기</div>
+                <div class="ranking-form-title" data-i18n="rankingFormTitle">🏆 랭킹에 등록하기</div>
                 <div class="ranking-form-row" id="ranking-input-row">
                     <input type="text" id="nickname-input" class="text-input ranking-nickname-input"
+                           data-i18n-placeholder="nicknamePlaceholder"
                            placeholder="닉네임 (최대 20자)" maxlength="20" autocomplete="off">
-                    <button class="btn-submit-rank" id="submit-rank-btn" onclick="submitRank()">등록</button>
+                    <button class="btn-submit-rank" id="submit-rank-btn" onclick="submitRank()" data-i18n="btnSubmitRank">등록</button>
                 </div>
                 <div class="ranking-result" id="ranking-result" hidden></div>
             </div>
 
             <div class="victory-actions">
-                <button class="btn-start" onclick="playAgain()">다시 하기</button>
-                <button class="btn-secondary" onclick="shareResult()">공유하기 📤</button>
+                <button class="btn-start" onclick="playAgain()" data-i18n="btnPlayAgain">다시 하기</button>
+                <button class="btn-secondary" onclick="shareResult()" data-i18n="btnShare">공유하기 📤</button>
             </div>
         </div>
     </div>

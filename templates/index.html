@@ -15,6 +15,7 @@
     <link rel="icon" href="/static/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/style.css?v={{ ver }}">
+    <script src="/static/js/i18n.js?v={{ ver }}"></script>
     <style>
         /* 언어 선택 버튼 */
         .lang-selector {
@@ -47,6 +48,28 @@
         }
         .lang-option:hover { background: rgba(255,255,255,0.06); }
         .lang-option.active { color: #FF6B35; font-weight: 700; }
+        /* 위키 선택 탭 */
+        .wiki-selector {
+            display: flex; gap: 6px; padding: 0 16px 12px;
+            overflow-x: auto; overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; flex-wrap: nowrap;
+        }
+        .wiki-selector::-webkit-scrollbar { display: none; }
+        .wiki-tab {
+            flex-shrink: 0;
+            padding: 6px 12px; border-radius: 20px; font-size: 0.8rem;
+            font-weight: 600; cursor: pointer; font-family: inherit;
+            border: 1.5px solid var(--border, #1E2D45);
+            background: transparent; color: var(--text-muted, #7B8FAD);
+            transition: all .15s;
+        }
+        .wiki-tab.active {
+            background: var(--accent, #FF6B35);
+            border-color: var(--accent, #FF6B35);
+            color: #fff;
+        }
+        .wiki-tab:active { opacity: 0.7; }
     </style>
 </head>
 <body class="index-page">
@@ -56,43 +79,43 @@
     ══════════════════════════════════════════ -->
     <div class="screen" id="screen-intro">
         <header class="hero" style="position:relative;">
-            <!-- 언어 선택 버튼 -->
+            <!-- UI 언어 선택 버튼 -->
             <div class="lang-selector">
                 <button class="lang-btn" id="lang-btn">🌐 <span id="lang-btn-label">한국어</span></button>
                 <div class="lang-dropdown hidden" id="lang-dropdown">
-                    <button class="lang-option" data-wiki="namu">🇰🇷 한국어</button>
-                    <button class="lang-option" data-wiki="en">🇺🇸 English</button>
-                    <button class="lang-option" data-wiki="de">🇩🇪 Deutsch</button>
-                    <button class="lang-option" data-wiki="fr">🇫🇷 Français</button>
-                    <button class="lang-option" data-wiki="ja">🇯🇵 日本語</button>
+                    <button class="lang-option" data-lang="namu">🇰🇷 한국어</button>
+                    <button class="lang-option" data-lang="en">🇺🇸 English</button>
+                    <button class="lang-option" data-lang="de">🇩🇪 Deutsch</button>
+                    <button class="lang-option" data-lang="fr">🇫🇷 Français</button>
+                    <button class="lang-option" data-lang="ja">🇯🇵 日本語</button>
                 </div>
             </div>
 
             <div class="hero-content">
                 <div class="hero-logo">🔗</div>
                 <h1 class="hero-title">Linky Run</h1>
-                <p class="hero-subtitle">링크를 타고 목표 페이지까지 달려가세요</p>
+                <p class="hero-subtitle" data-i18n="subtitle">링크를 타고 목표 페이지까지 달려가세요</p>
             </div>
         </header>
 
         <main class="container">
             <section class="card rules-card">
-                <h3 class="section-title">게임 방법</h3>
+                <h3 class="section-title" data-i18n="howToPlay">게임 방법</h3>
                 <ol class="rules-list">
-                    <li><span>난이도 선택 → <strong>시작·목표 페이지</strong> 자동 배정<br>또는 직접 원하는 페이지 입력</span></li>
-                    <li><span><strong>내부 링크만</strong> 클릭해서 목표 페이지까지 이동</span></li>
-                    <li><span>최단 시간 · 최소 클릭으로 도달하면 승리!</span></li>
-                    <li><span>뒤로 가기 · 검색 · 외부 링크 사용 금지</span></li>
+                    <li><span data-i18n-html="rule1">난이도 선택 → <strong>시작·목표 페이지</strong> 자동 배정<br>또는 직접 원하는 페이지 입력</span></li>
+                    <li><span data-i18n-html="rule2"><strong>내부 링크만</strong> 클릭해서 목표 페이지까지 이동</span></li>
+                    <li><span data-i18n="rule3">최단 시간 · 최소 클릭으로 도달하면 승리!</span></li>
+                    <li><span data-i18n="rule4">뒤로 가기 · 검색 · 외부 링크 사용 금지</span></li>
                 </ol>
             </section>
 
             <button class="btn-start btn-start-big" id="btn-go-difficulty">
-                <span>게임 시작하기</span>
+                <span data-i18n="btnStart">게임 시작하기</span>
                 <span class="btn-start-icon">▶</span>
             </button>
 
             <button class="btn-leaderboard-outline" id="btn-open-lb-intro">
-                🏆 랭킹 보기
+                <span data-i18n="btnRankingFull">🏆 랭킹 보기</span>
             </button>
         </main>
     </div>
@@ -102,71 +125,83 @@
     ══════════════════════════════════════════ -->
     <div class="screen screen-hidden" id="screen-difficulty">
         <header class="diff-header">
-            <button class="btn-back" id="btn-back">← 뒤로</button>
-            <h2 class="diff-header-title">게임 시작</h2>
-            <button class="btn-back-ghost" id="btn-open-lb-diff">🏆 랭킹</button>
+            <button class="btn-back" id="btn-back" data-i18n="btnBack">← 뒤로</button>
+            <h2 class="diff-header-title" data-i18n="screenDiffTitle">게임 시작</h2>
+            <button class="btn-back-ghost" id="btn-open-lb-diff" data-i18n="btnRanking">🏆 랭킹</button>
         </header>
+
+        <!-- 위키 선택 (게임 대상 위키) -->
+        <div class="wiki-selector" id="wiki-selector">
+            <button class="wiki-tab active" data-wiki="namu">🇰🇷 나무위키</button>
+            <button class="wiki-tab" data-wiki="ko">🇰🇷 위키백과</button>
+            <button class="wiki-tab" data-wiki="en">🇺🇸 Wikipedia</button>
+            <button class="wiki-tab" data-wiki="de">🇩🇪 Wikipedia</button>
+            <button class="wiki-tab" data-wiki="fr">🇫🇷 Wikipédia</button>
+            <button class="wiki-tab" data-wiki="ja">🇯🇵 ウィキペディア</button>
+        </div>
 
         <main class="container diff-container">
 
             <!-- 랜덤 게임 -->
             <div class="card">
-                <div class="section-title">랜덤 게임</div>
-                <p class="diff-desc">난이도를 고르면 출발지는 랜덤으로, 목표지는 난이도에 맞게 배정됩니다.</p>
+                <div class="section-title" data-i18n="randomGameTitle">랜덤 게임</div>
+                <p class="diff-desc" data-i18n="randomGameDesc">난이도를 고르면 출발지는 랜덤으로, 목표지는 난이도에 맞게 배정됩니다.</p>
                 <div class="diff-grid">
                     <button class="diff-card diff-easy" data-difficulty="easy">
                         <span class="diff-card-icon">🟢</span>
-                        <span class="diff-card-name">쉬움</span>
-                        <span class="diff-card-detail">인기 페이지</span>
+                        <span class="diff-card-name" data-i18n="diffEasy">쉬움</span>
+                        <span class="diff-card-detail" data-i18n="diffEasyDetail">인기 페이지</span>
                     </button>
                     <button class="diff-card diff-medium" data-difficulty="medium">
                         <span class="diff-card-icon">🟡</span>
-                        <span class="diff-card-name">보통</span>
-                        <span class="diff-card-detail">중간 페이지</span>
+                        <span class="diff-card-name" data-i18n="diffMedium">보통</span>
+                        <span class="diff-card-detail" data-i18n="diffMediumDetail">중간 페이지</span>
                     </button>
                     <button class="diff-card diff-hard" data-difficulty="hard">
                         <span class="diff-card-icon">🟠</span>
-                        <span class="diff-card-name">어려움</span>
-                        <span class="diff-card-detail">마니아용</span>
+                        <span class="diff-card-name" data-i18n="diffHard">어려움</span>
+                        <span class="diff-card-detail" data-i18n="diffHardDetail">마니아용</span>
                     </button>
                     <button class="diff-card diff-very-hard" data-difficulty="very_hard">
                         <span class="diff-card-icon">🔴</span>
-                        <span class="diff-card-name">매우 어려움</span>
-                        <span class="diff-card-detail">고수 도전</span>
+                        <span class="diff-card-name" data-i18n="diffVeryHard">매우 어려움</span>
+                        <span class="diff-card-detail" data-i18n="diffVeryHardDetail">고수 도전</span>
                     </button>
                 </div>
             </div>
 
             <!-- 직접 입력 -->
             <div class="card custom-card">
-                <div class="section-title">직접 설정</div>
+                <div class="section-title" data-i18n="customTitle">직접 설정</div>
                 <div class="input-group">
                     <label class="input-label">
-                        <span class="label-badge start-badge">시작</span>
+                        <span class="label-badge start-badge" data-i18n="labelStart">시작</span>
                     </label>
                     <div class="input-row">
                         <input type="text" id="start-input" class="text-input"
+                               data-i18n-placeholder="placeholderPage"
                                placeholder="페이지 이름"
                                autocomplete="off" spellcheck="false"
                                list="page-suggestions">
-                        <button class="btn-random" id="start-random" title="랜덤">🎲</button>
+                        <button class="btn-random" id="start-random" data-i18n-title="labelStart" title="랜덤">🎲</button>
                     </div>
                 </div>
                 <div class="setup-arrow">↓</div>
                 <div class="input-group">
                     <label class="input-label">
-                        <span class="label-badge goal-badge">목표</span>
+                        <span class="label-badge goal-badge" data-i18n="labelGoal">목표</span>
                     </label>
                     <div class="input-row">
                         <input type="text" id="goal-input" class="text-input"
+                               data-i18n-placeholder="placeholderPage"
                                placeholder="페이지 이름"
                                autocomplete="off" spellcheck="false"
                                list="page-suggestions">
-                        <button class="btn-random" id="goal-random" title="랜덤">🎲</button>
+                        <button class="btn-random" id="goal-random" data-i18n-title="labelGoal" title="랜덤">🎲</button>
                     </div>
                 </div>
                 <button class="btn-start" id="btn-custom-start">
-                    <span class="btn-start-text">게임 시작</span>
+                    <span class="btn-start-text" data-i18n="btnCustomStart">게임 시작</span>
                     <span class="btn-start-icon">▶</span>
                 </button>
             </div>
@@ -182,17 +217,17 @@
     <div class="modal-overlay" id="leaderboard-modal" hidden>
         <div class="modal-card">
             <div class="modal-header">
-                <h2 class="modal-title">🏆 랭킹</h2>
+                <h2 class="modal-title" data-i18n="modalRankingTitle">🏆 랭킹</h2>
                 <button class="modal-close" id="close-leaderboard">✕</button>
             </div>
             <div class="lb-tabs">
-                <button class="lb-tab lb-tab-active" data-difficulty="easy">🟢 쉬움</button>
-                <button class="lb-tab" data-difficulty="medium">🟡 보통</button>
-                <button class="lb-tab" data-difficulty="hard">🟠 어려움</button>
-                <button class="lb-tab" data-difficulty="very_hard">🔴 매우 어려움</button>
+                <button class="lb-tab lb-tab-active" data-difficulty="easy" data-i18n="tabEasy">🟢 쉬움</button>
+                <button class="lb-tab" data-difficulty="medium" data-i18n="tabMedium">🟡 보통</button>
+                <button class="lb-tab" data-difficulty="hard" data-i18n="tabHard">🟠 어려움</button>
+                <button class="lb-tab" data-difficulty="very_hard" data-i18n="tabVeryHard">🔴 매우 어려움</button>
             </div>
             <div id="lb-content" class="lb-content">
-                <div class="lb-empty">탭을 선택해서 랭킹을 확인하세요</div>
+                <div class="lb-empty" data-i18n="lbSelect">탭을 선택해서 랭킹을 확인하세요</div>
             </div>
         </div>
     </div>
@@ -202,32 +237,25 @@
             navigator.serviceWorker.register('/static/sw.js');
         }
 
-        /* ── 언어·위키 선택 ──────────────────────────── */
-        const LANG_OPTIONS = {
-            'namu': { label: '한국어', flag: '🇰🇷' },
-            'en':   { label: 'English', flag: '🇺🇸' },
-            'de':   { label: 'Deutsch', flag: '🇩🇪' },
-            'fr':   { label: 'Français', flag: '🇫🇷' },
-            'ja':   { label: '日本語', flag: '🇯🇵' },
+        /* ── UI 언어 선택 (별도 — 게임 위키와 무관) ─── */
+        const LANG_LABELS = {
+            namu: '한국어', en: 'English', de: 'Deutsch',
+            fr: 'Français', ja: '日本語',
         };
         const DEVICE_LANG_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        const deviceCode = (navigator.language || 'ko').split('-')[0].toLowerCase();
+        let selectedLang = DEVICE_LANG_MAP[deviceCode] || 'namu';
 
-        const deviceLang = (navigator.language || 'ko').split('-')[0].toLowerCase();
-        let selectedWiki = DEVICE_LANG_MAP[deviceLang] || 'namu';
-
-        function setWiki(wiki) {
-            selectedWiki = wiki;
-            const opt = LANG_OPTIONS[wiki] || LANG_OPTIONS['namu'];
-            document.getElementById('lang-btn-label').textContent = opt.label;
+        function setLang(lang) {
+            selectedLang = lang;
+            window._WIKI = lang;
+            document.getElementById('lang-btn-label').textContent = LANG_LABELS[lang] || lang;
             document.querySelectorAll('.lang-option').forEach(el => {
-                el.classList.toggle('active', el.dataset.wiki === wiki);
+                el.classList.toggle('active', el.dataset.lang === lang);
             });
-            updateDatalist(wiki);
-            document.getElementById('start-input').value = '';
-            document.getElementById('goal-input').value = '';
+            applyI18n();
         }
 
-        // 드롭다운 토글
         document.getElementById('lang-btn').addEventListener('click', e => {
             e.stopPropagation();
             document.getElementById('lang-dropdown').classList.toggle('hidden');
@@ -237,12 +265,31 @@
         });
         document.querySelectorAll('.lang-option').forEach(el => {
             el.addEventListener('click', () => {
-                setWiki(el.dataset.wiki);
+                setLang(el.dataset.lang);
                 document.getElementById('lang-dropdown').classList.add('hidden');
             });
         });
 
-        /* ── 자동완성 ────────────────────────────────── */
+        /* ── 게임 위키 선택 (별도 — UI 언어와 무관) ─── */
+        /* 기본 위키: 기기 언어에 맞게 */
+        const DEVICE_WIKI_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        let selectedWiki = DEVICE_WIKI_MAP[deviceCode] || 'namu';
+
+        function setWiki(wiki) {
+            selectedWiki = wiki;
+            document.querySelectorAll('.wiki-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.wiki === wiki);
+            });
+            updateDatalist(wiki);
+            document.getElementById('start-input').value = '';
+            document.getElementById('goal-input').value = '';
+        }
+
+        document.querySelectorAll('.wiki-tab').forEach(el => {
+            el.addEventListener('click', () => setWiki(el.dataset.wiki));
+        });
+
+        /* ── 자동완성 ─────────────────────────────── */
         const WIKI_ALL_PAGES = {{ wiki_all_pages | safe }};
 
         function updateDatalist(wiki) {
@@ -255,19 +302,20 @@
             });
         }
 
-        // 초기화 (기기 언어에 맞춰)
+        /* ── 초기화 ──────────────────────────────── */
+        setLang(selectedLang);
         setWiki(selectedWiki);
 
-        /* ── 화면 전환 ──────────────────────────────── */
+        /* ── 화면 전환 ──────────────────────────── */
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.add('screen-hidden'));
             document.getElementById(id).classList.remove('screen-hidden');
         }
 
-        /* ── 게임 실행 ──────────────────────────────── */
+        /* ── 게임 실행 ──────────────────────────── */
         function launchGame(start, goal, difficulty) {
             if (!start || !goal) return;
-            if (start === goal) { alert('시작과 목표 페이지가 같습니다.'); return; }
+            if (start === goal) { alert(t('alertSamePage')); return; }
             const gs = {
                 start, goal, startTime: Date.now(),
                 path: [start], hops: 0, active: true,
@@ -278,8 +326,8 @@
             document.body.insertAdjacentHTML('beforeend',
                 `<div id="launch-overlay" style="position:fixed;inset:0;background:rgba(7,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;">
                     <div style="font-size:2.4rem;animation:spin 1s linear infinite">🔗</div>
-                    <div style="background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem">페이지 불러오는 중…</div>
-                    <div style="color:#7B8FAD;font-size:0.85rem">${start} 준비 중</div>
+                    <div style="background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem">${t('loadingText')}</div>
+                    <div style="color:#7B8FAD;font-size:0.85rem">${t('loadingPreparing')(start)}</div>
                     <style>@keyframes spin{0%{transform:rotate(-15deg) scale(1)}50%{transform:rotate(15deg) scale(1.2)}100%{transform:rotate(-15deg) scale(1)}}</style>
                 </div>`
             );
@@ -295,7 +343,7 @@
                 const data = await res.json();
                 launchGame(data.start, data.goal, difficulty);
             } catch (e) {
-                alert('게임을 불러오지 못했습니다. 다시 시도해주세요.');
+                alert(t('alertLoadFail'));
             } finally {
                 if (card) { card.classList.remove('diff-card-loading'); card.disabled = false; }
             }
@@ -307,7 +355,7 @@
             document.getElementById(inputId).value = pages[Math.floor(Math.random() * pages.length)];
         }
 
-        /* ── 랭킹 모달 ──────────────────────────────── */
+        /* ── 랭킹 모달 ──────────────────────────── */
         let activeLbDifficulty = 'easy';
 
         function openLeaderboard(difficulty) {
@@ -319,8 +367,8 @@
         }
         function switchLbTab(difficulty) {
             activeLbDifficulty = difficulty || 'easy';
-            document.querySelectorAll('.lb-tab').forEach(t => {
-                t.classList.toggle('lb-tab-active', t.dataset.difficulty === activeLbDifficulty);
+            document.querySelectorAll('.lb-tab').forEach(tab => {
+                tab.classList.toggle('lb-tab-active', tab.dataset.difficulty === activeLbDifficulty);
             });
             loadRanking(activeLbDifficulty);
         }
@@ -332,29 +380,31 @@
                 ? `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
                 : `${String(ss).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
         }
-        const DIFF_MAP = {
-            easy:      ['쉬움',       '#00b894'],
-            medium:    ['보통',       '#fdcb6e'],
-            hard:      ['어려움',     '#e17055'],
-            very_hard: ['매우 어려움', '#d63031'],
-        };
+
         function diffBadgeHtml(d) {
-            const [label, color] = DIFF_MAP[d] || ['?', '#7d8590'];
+            const map = {
+                easy:      [t('diffEasy'),      '#00b894'],
+                medium:    [t('diffMedium'),     '#fdcb6e'],
+                hard:      [t('diffHard'),       '#e17055'],
+                very_hard: [t('diffVeryHard'),   '#d63031'],
+            };
+            const [label, color] = map[d] || ['?', '#7d8590'];
             return `<span class="lb-diff" style="color:${color};border-color:${color}40">${label}</span>`;
         }
+
         function esc(s) {
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
 
         async function loadRanking(difficulty) {
             const el = document.getElementById('lb-content');
-            el.innerHTML = '<div class="lb-loading">불러오는 중…</div>';
+            el.innerHTML = `<div class="lb-loading">${t('lbLoading')}</div>`;
             try {
                 let url = `/api/ranking?wiki=${encodeURIComponent(selectedWiki)}&limit=20`;
                 if (difficulty) url += `&difficulty=${encodeURIComponent(difficulty)}`;
                 const data = await fetch(url).then(r => r.json());
                 if (!data.rankings?.length) {
-                    el.innerHTML = '<div class="lb-empty">아직 기록이 없습니다.<br>첫 번째 도전자가 되어보세요! 🏆</div>';
+                    el.innerHTML = `<div class="lb-empty">${t('lbEmpty')}</div>`;
                     return;
                 }
                 const rows = data.rankings.map((r, i) => {
@@ -363,24 +413,24 @@
                         <td class="lb-rank">${medal}</td>
                         <td class="lb-nick">${esc(r.nickname)}</td>
                         <td class="lb-route">${esc(r.start)} → ${esc(r.goal)}</td>
-                        <td class="lb-hops">${r.hops}회</td>
+                        <td class="lb-hops">${r.hops}${t('hopsUnit')}</td>
                         <td class="lb-time">${fmtMs(r.elapsed_ms)}</td>
                         <td>${diffBadgeHtml(r.difficulty)}</td>
                     </tr>`;
                 }).join('');
                 el.innerHTML = `<table class="lb-table">
                     <thead><tr>
-                        <th>순위</th><th>닉네임</th><th>경로</th>
-                        <th>이동</th><th>시간</th><th>난이도</th>
+                        <th>${t('lbRank')}</th><th>${t('lbNick')}</th><th>${t('lbRoute')}</th>
+                        <th>${t('lbHops')}</th><th>${t('lbTime')}</th><th>${t('lbDifficulty')}</th>
                     </tr></thead>
                     <tbody>${rows}</tbody>
                 </table>`;
             } catch {
-                el.innerHTML = '<div class="lb-empty">불러오기 실패</div>';
+                el.innerHTML = `<div class="lb-empty">${t('lbFail')}</div>`;
             }
         }
 
-        /* ── 이벤트 연결 ─────────────────────────────── */
+        /* ── 이벤트 연결 ─────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-difficulty'));
             document.getElementById('btn-back').addEventListener('click', () => showScreen('screen-intro'));
@@ -394,8 +444,8 @@
             document.getElementById('btn-custom-start').addEventListener('click', () => {
                 const start = document.getElementById('start-input').value.trim();
                 const goal  = document.getElementById('goal-input').value.trim();
-                if (!start) { alert('시작 페이지를 입력해주세요.'); return; }
-                if (!goal)  { alert('목표 페이지를 입력해주세요.'); return; }
+                if (!start) { alert(t('alertNoStart')); return; }
+                if (!goal)  { alert(t('alertNoGoal'));  return; }
                 launchGame(start, goal, 'custom');
             });
             document.querySelectorAll('#start-input, #goal-input').forEach(inp => {

@@ -48,7 +48,7 @@
         const el = document.getElementById('rh-path-content');
         if (!el) return;
         if (!gs || !gs.path || gs.path.length === 0) {
-            el.innerHTML = '<span class="rh-path-item">이동 경로 없음</span>';
+            el.innerHTML = `<span class="rh-path-item">${t('pathEmpty')}</span>`;
             return;
         }
         el.innerHTML = gs.path.map((p, i) => {
@@ -65,7 +65,7 @@
         const goalBtn = document.getElementById('rh-gu-btn-goal');
         if (goalBtn) {
             const goalName = (gs && gs.goal) || (typeof GOAL !== 'undefined' ? GOAL : '');
-            goalBtn.textContent = goalName ? `목표 페이지로 이동 (${goalName})` : '목표 페이지로 이동';
+            goalBtn.textContent = t('giveUpGoalBtn')(goalName);
         }
         modal.classList.remove('rh-hidden');
     };
@@ -102,7 +102,7 @@
         const pe = document.getElementById('rh-v-path');
         const ti = document.getElementById('rh-timer');
         if (te) te.textContent = fmt(elapsed);
-        if (he) he.textContent = gs ? gs.hops + '회' : '—';
+        if (he) he.textContent = gs ? `${gs.hops}${t('hopsUnit')}` : '—';
         if (ti) ti.textContent = fmt(elapsed);
         if (pe && gs && gs.path) {
             pe.innerHTML = gs.path.map((p, i) => {
@@ -127,10 +127,10 @@
     window.rhSubmitRank = async function () {
         if (!gs) return;
         const nick = (document.getElementById('rh-nickname')?.value || '').trim();
-        if (!nick) { alert('닉네임을 입력해주세요.'); return; }
+        if (!nick) { alert(t('alertNoNick')); return; }
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
         const btn = document.getElementById('rh-rank-btn');
-        if (btn) { btn.disabled = true; btn.textContent = '등록 중…'; }
+        if (btn) { btn.disabled = true; btn.textContent = t('submitting'); }
         try {
             const res = await fetch('/api/ranking', {
                 method: 'POST',
@@ -150,20 +150,19 @@
             const row = document.getElementById('rh-rank-row');
             const re = document.getElementById('rh-rank-result');
             if (row) row.style.display = 'none';
-            if (re) { re.style.display = 'block'; re.textContent = rank > 0 ? `🏆 ${rank}위 기록 등록 완료!` : '✅ 등록 완료!'; }
+            if (re) { re.style.display = 'block'; re.textContent = rank > 0 ? t('rankResult')(rank) : t('rankOk'); }
         } catch (_) {
-            if (btn) { btn.disabled = false; btn.textContent = '등록'; }
-            alert('등록에 실패했습니다.');
+            if (btn) { btn.disabled = false; btn.textContent = t('btnSubmitRank'); }
+            alert(t('rankFail'));
         }
     };
 
     window.rhShare = async function () {
         if (!gs) return;
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
-        const path = (gs.path || []).join(' → ');
-        const text = `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${fmt(elapsed)}  🔗 ${gs.hops}회\n경로: ${path}`;
-        if (navigator.share) { try { await navigator.share({ title: 'Linky Run', text }); return; } catch (_) { } }
-        try { await navigator.clipboard.writeText(text); alert('결과가 복사되었습니다! 📋'); } catch (_) { alert(text); }
+        const text = t('shareText')(gs, fmt(elapsed));
+        if (navigator.share) { try { await navigator.share({ title: t('shareTitle'), text }); return; } catch (_) { } }
+        try { await navigator.clipboard.writeText(text); alert(t('copied')); } catch (_) { alert(text); }
     };
 
     // 위키 도메인 목록
@@ -234,7 +233,7 @@
     if (!gs || !gs.active) {
         const btn = document.querySelector('.rh-btn-danger');
         if (btn) {
-            btn.textContent = '닫기';
+            btn.textContent = t('closeBtn');
             btn.onclick = function () { window.location.href = '/'; };
         }
     }

@@ -69,7 +69,7 @@ function renderPath(path) {
     const el = document.getElementById('path-content');
     if (!el) return;
     if (!path || path.length === 0) {
-        el.innerHTML = '<span class="path-empty">이동 경로 없음</span>';
+        el.innerHTML = `<span class="path-empty">${t('pathEmpty')}</span>`;
         return;
     }
     el.innerHTML = path.map((p, i) => {
@@ -105,8 +105,10 @@ function filterLinks(query) {
 
     const countEl = document.getElementById('link-count');
     if (countEl) {
-        const total = cards.length;
-        countEl.textContent = q ? `${visible}/${total}개` : `${total}개`;
+        const total = parseInt(countEl.dataset.total || cards.length, 10);
+        countEl.textContent = q
+            ? `${visible}/${total}${t('countUnit')}`
+            : `${total}${t('countUnit')}`;
     }
 }
 
@@ -136,7 +138,7 @@ function showVictory() {
     const pathEl = document.getElementById('victory-path');
 
     if (timeEl) timeEl.textContent = formatTime(elapsed);
-    if (hopsEl) hopsEl.textContent = gameState ? `${gameState.hops}회` : '—';
+    if (hopsEl) hopsEl.textContent = gameState ? `${gameState.hops}${t('hopsUnit')}` : '—';
 
     if (pathEl && gameState && gameState.path) {
         pathEl.innerHTML = gameState.path.map((p, i) => {
@@ -151,6 +153,12 @@ function showVictory() {
     const timerEl = document.getElementById('timer-display');
     if (timerEl) timerEl.textContent = formatTime(elapsed);
 
+    // custom 게임은 랭킹 폼 숨김
+    if (gameState && gameState.difficulty === 'custom') {
+        const form = document.getElementById('ranking-form');
+        if (form) form.style.display = 'none';
+    }
+
     const overlay = document.getElementById('victory-overlay');
     if (overlay) overlay.hidden = false;
 }
@@ -162,7 +170,7 @@ function playAgain() {
 }
 
 function giveUp() {
-    if (!confirm('게임을 포기하시겠습니까?')) return;
+    if (!confirm(t('confirmGiveUp'))) return;
     clearState();
     window.location.href = '/';
 }
@@ -170,12 +178,12 @@ function giveUp() {
 async function submitRank() {
     if (!gameState) return;
     const nickname = document.getElementById('nickname-input').value.trim();
-    if (!nickname) { alert('닉네임을 입력해주세요.'); return; }
+    if (!nickname) { alert(t('alertNoNick')); return; }
 
     const elapsed = gameState.elapsed || (Date.now() - gameState.startTime);
     const btn = document.getElementById('submit-rank-btn');
     btn.disabled = true;
-    btn.textContent = '등록 중…';
+    btn.textContent = t('submitting');
 
     try {
         const res = await fetch('/api/ranking', {
@@ -189,12 +197,12 @@ async function submitRank() {
                 hops:       gameState.hops,
                 path:       gameState.path,
                 difficulty: gameState.difficulty || 'unknown',
+                wiki:       gameState.wiki || window._GAME_WIKI || 'namu',
             }),
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'failed');
 
-        // 난이도별 순위 계산
         const diff = gameState.difficulty || 'unknown';
         const rankRes  = await fetch(`/api/ranking?difficulty=${encodeURIComponent(diff)}&limit=50`);
         const rankData = await rankRes.json();
@@ -203,33 +211,26 @@ async function submitRank() {
         document.getElementById('ranking-input-row').hidden = true;
         const resultEl = document.getElementById('ranking-result');
         resultEl.hidden = false;
-        resultEl.textContent = rank > 0
-            ? `🏆 ${rank}위 기록 등록 완료!`
-            : '✅ 등록 완료!';
+        resultEl.textContent = rank > 0 ? t('rankResult')(rank) : t('rankOk');
     } catch (e) {
         btn.disabled = false;
-        btn.textContent = '등록';
-        alert('등록에 실패했습니다.');
+        btn.textContent = t('btnSubmitRank');
+        alert(t('rankFail'));
     }
 }
 
 async function shareResult() {
     if (!gameState) return;
     const elapsed = gameState.elapsed || (Date.now() - gameState.startTime);
-    const path    = (gameState.path || []).join(' → ');
-    const text    =
-        `🌳 나무위키 스피드런\n` +
-        `${gameState.start} → ${gameState.goal}\n` +
-        `⏱ ${formatTime(elapsed)}  🔗 ${gameState.hops}회\n` +
-        `경로: ${path}`;
+    const text = t('shareText')(gameState, formatTime(elapsed));
 
     if (navigator.share) {
-        try { await navigator.share({ title: '나무위키 스피드런', text }); return; }
+        try { await navigator.share({ title: t('shareTitle'), text }); return; }
         catch (_) {}
     }
     try {
         await navigator.clipboard.writeText(text);
-        alert('결과가 클립보드에 복사되었습니다! 📋');
+        alert(t('copied'));
     } catch (_) {
         alert(text);
     }
@@ -248,19 +249,20 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
     gameState = loadState();
 
+    // Apply i18n (window._WIKI already set by inline script in page.html)
+    if (typeof applyI18n === 'function') applyI18n();
+
     syncHUD();
 
     if (gameState && gameState.active && !IS_GOAL) {
         rafId = requestAnimationFrame(tickTimer);
     }
 
-    // Victory: only trigger if the user actually navigated (hops > 0),
-    // preventing false victory on the very first (start) page load.
     if (IS_GOAL && gameState && gameState.active && gameState.hops > 0) {
         setTimeout(showVictory, 120);
     }
 
-    // Wire up link cards — set real href and attach click handler
+    // Wire up link cards
     document.querySelectorAll('.link-card').forEach(card => {
         const title = card.dataset.title;
         const goal  = card.dataset.goal;

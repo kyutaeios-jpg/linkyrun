@@ -875,39 +875,40 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 
     inject = f'''
 <link rel="stylesheet" href="/static/css/hud.css?v={_APP_VER}">
+<script src="/static/js/i18n.js?v={_APP_VER}"></script>
 <div id="rh-pad"></div>
 <header id="rh-hud">
   <div class="rh-hud-left">
-    <div class="rh-hud-stat">
+    <div class="rh-hud-stat" data-i18n-title="statTime">
       <span class="rh-hud-icon">⏱</span>
       <span class="rh-hud-val" id="rh-timer">00:00</span>
     </div>
-    <div class="rh-hud-stat">
+    <div class="rh-hud-stat" data-i18n-title="statHops">
       <span class="rh-hud-icon">🔗</span>
       <span class="rh-hud-val" id="rh-hops">0</span>
     </div>
   </div>
   <div class="rh-hud-center">
-    <span class="rh-hud-goal-label">목표</span>
+    <span class="rh-hud-goal-label" data-i18n="hudGoalLabel">목표</span>
     <span class="rh-hud-goal" id="rh-goal">—</span>
   </div>
   <div class="rh-hud-right">
-    <button class="rh-btn" onclick="rhTogglePath()">경로</button>
-    <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()">포기</button>
+    <button class="rh-btn" onclick="rhTogglePath()" data-i18n="btnPath">경로</button>
+    <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()" data-i18n="btnGiveUp">포기</button>
   </div>
 </header>
 
 <div id="rh-path-panel" style="display:none">
-  <div id="rh-path-content"><span class="rh-path-item">이동 경로 없음</span></div>
+  <div id="rh-path-content"><span class="rh-path-item" data-i18n="pathEmpty">이동 경로 없음</span></div>
 </div>
 
 <div id="rh-giveup-modal" class="rh-hidden">
   <div class="rh-gu-card">
-    <div class="rh-gu-title">게임을 포기하시겠습니까?</div>
+    <div class="rh-gu-title" data-i18n="giveUpTitle">게임을 포기하시겠습니까?</div>
     <div class="rh-gu-actions">
       <button class="rh-gu-btn rh-gu-btn-goal" id="rh-gu-btn-goal" onclick="rhGiveUpGoal()"></button>
-      <button class="rh-gu-btn rh-gu-btn-home" onclick="rhGiveUpHome()">홈으로 이동</button>
-      <button class="rh-gu-btn rh-gu-btn-cancel" onclick="rhGiveUpCancel()">아니오</button>
+      <button class="rh-gu-btn rh-gu-btn-home" onclick="rhGiveUpHome()" data-i18n="giveUpHome">홈으로 이동</button>
+      <button class="rh-gu-btn rh-gu-btn-cancel" onclick="rhGiveUpCancel()" data-i18n="giveUpCancel">아니오</button>
     </div>
   </div>
 </div>
@@ -915,33 +916,34 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 <div id="rh-victory" style="display:none">
   <div class="rh-v-card">
     <div class="rh-v-icon">🎉</div>
-    <div class="rh-v-title">목표 달성!</div>
+    <div class="rh-v-title" data-i18n="victoryTitle">목표 달성!</div>
     <div class="rh-v-stats">
       <div class="rh-v-stat">
-        <div class="rh-v-stat-label">소요 시간</div>
+        <div class="rh-v-stat-label" data-i18n="statTime">소요 시간</div>
         <div class="rh-v-stat-val" id="rh-v-time">—</div>
       </div>
       <div class="rh-v-stat">
-        <div class="rh-v-stat-label">이동 횟수</div>
+        <div class="rh-v-stat-label" data-i18n="statHops">이동 횟수</div>
         <div class="rh-v-stat-val" id="rh-v-hops">—</div>
       </div>
     </div>
     <div>
-      <div class="rh-v-path-label">이동 경로</div>
+      <div class="rh-v-path-label" data-i18n="pathLabel">이동 경로</div>
       <div class="rh-v-path" id="rh-v-path"></div>
     </div>
     <div>
-      <div class="rh-rank-title">🏆 랭킹에 등록하기</div>
+      <div class="rh-rank-title" data-i18n="rankingFormTitle">🏆 랭킹에 등록하기</div>
       <div id="rh-rank-row" class="rh-rank-row">
         <input type="text" id="rh-nickname" class="rh-rank-input"
+               data-i18n-placeholder="nicknamePlaceholder"
                placeholder="닉네임 (최대 20자)" maxlength="20" autocomplete="off">
-        <button class="rh-rank-submit" id="rh-rank-btn" onclick="rhSubmitRank()">등록</button>
+        <button class="rh-rank-submit" id="rh-rank-btn" onclick="rhSubmitRank()" data-i18n="btnSubmitRank">등록</button>
       </div>
       <div class="rh-rank-result" id="rh-rank-result" style="display:none"></div>
     </div>
     <div class="rh-v-actions">
-      <button class="rh-v-btn rh-v-btn-primary" onclick="rhPlayAgain()">다시 하기</button>
-      <button class="rh-v-btn rh-v-btn-secondary" onclick="rhShare()">공유하기 📤</button>
+      <button class="rh-v-btn rh-v-btn-primary" onclick="rhPlayAgain()" data-i18n="btnPlayAgain">다시 하기</button>
+      <button class="rh-v-btn rh-v-btn-secondary" onclick="rhShare()" data-i18n="btnShare">공유하기 📤</button>
     </div>
   </div>
 </div>
@@ -951,6 +953,8 @@ const PAGE_TITLE = {t_json};
 const GOAL       = {g_json};
 const IS_GOAL    = {ig_json};
 const WIKI       = {w_json};
+window._WIKI = {{'namu':'namu','ko':'namu','en':'en','de':'de','fr':'fr','ja':'ja'}}[WIKI] || 'namu';
+applyI18n();
 </script>
 <script src="/static/js/proxy.js?v={_APP_VER}"></script>
 '''
@@ -1394,9 +1398,12 @@ def page(title):
     links = get_page_links(title) or [] if wiki == 'namu' else []
     error = not links
     status = 404 if error else 200
+    cfg = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
+    wiki_url = cfg['base_url'] + quote(title, safe='')
     return render_template('page.html',
                            title=title, links=links, goal=goal,
-                           is_goal=is_goal, error=error), status
+                           is_goal=is_goal, error=error,
+                           wiki=wiki, wiki_url=wiki_url), status
 
 
 @app.route('/api/links/<path:title>')
