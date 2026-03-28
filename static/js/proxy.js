@@ -155,14 +155,6 @@
                     `<span${isG ? ' class="rh-vpath-goal"' : ''}>${esc(p)}</span>`;
             }).join('');
         }
-        // 힌트 사용 횟수 표시
-        const hintsUsed = gs ? (gs.hintsUsed || 0) : 0;
-        const hintsStat = document.getElementById('rh-v-hints-stat');
-        const hintsVal  = document.getElementById('rh-v-hints');
-        if (hintsStat && hintsUsed > 0) {
-            hintsStat.style.display = '';
-            if (hintsVal) hintsVal.textContent = hintsUsed + t('hopsUnit');
-        }
         // custom/daily 게임은 랭킹 등록 폼 숨김
         const rankRow = document.getElementById('rh-rank-row');
         const rankTitle = document.querySelector('.rh-rank-title');
@@ -260,32 +252,6 @@
         }
     };
 
-    /* ── 힌트 시스템 ─────────────────────────────────────── */
-    window.rhShowHint = async function () {
-        if (!gs || !gs.goal) return;
-        const used = gs.hintsUsed || 0;
-        if (used >= 3) { alert(t('hintNoMore')); return; }
-
-        const n = used + 1;
-        const wiki = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
-        const btn = document.querySelector('.rh-btn-hint');
-        if (btn) btn.disabled = true;
-        try {
-            const res = await fetch(
-                `/api/hint?title=${encodeURIComponent(gs.goal)}&wiki=${encodeURIComponent(wiki)}&n=${n}`
-            );
-            const data = await res.json();
-            gs.hintsUsed = n;
-            save(gs);
-            const labels = { 1: '카테고리', 2: '설명', 3: '도달 가능성' };
-            alert(`💡 힌트 ${n}/3 — ${labels[n]}\n\n${data.hint}`);
-        } catch (_) {
-            alert('힌트를 불러오지 못했습니다.');
-        } finally {
-            if (btn) btn.disabled = false;
-        }
-    };
-
     // 위키 도메인 목록
     const WIKI_HOSTS = {
         'namu.wiki':          '/w/',
@@ -374,7 +340,5 @@
             btn.textContent = t('closeBtn');
             btn.onclick = function () { window.location.href = '/'; };
         }
-        const hintBtn = document.querySelector('.rh-btn-hint');
-        if (hintBtn) hintBtn.style.display = 'none';
     }
 }());

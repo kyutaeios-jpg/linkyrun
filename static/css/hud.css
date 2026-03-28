@@ -203,12 +203,6 @@ body {
     align-items: center; justify-content: center;
 }
 .rh-v-actions { flex-wrap: wrap; }
-.rh-btn-hint {
-    background: rgba(56,189,248,0.10);
-    border-color: rgba(56,189,248,0.3);
-    color: var(--rh-accent);
-}
-
 /* ── 포기 확인 모달 ─────────────────────────────────────── */
 #rh-giveup-modal {
     position: fixed; inset: 0; z-index: 9999;
