@@ -70,19 +70,21 @@
         .wiki-card-flag { font-size: 2rem; line-height: 1; }
         .wiki-card-name { font-size: 0.92rem; font-weight: 700; }
         .wiki-card-desc { font-size: 0.75rem; color: var(--text-muted, #7B8FAD); }
-        /* 랭킹 모달 위키 탭 */
+        /* 랭킹 모달 위키 선택 — 3×2 그리드 (iOS overflow-x 불안정 해소) */
         .lb-wiki-tabs {
-            display: flex; gap: 6px; padding: 14px 16px 4px;
-            overflow-x: auto; -webkit-overflow-scrolling: touch;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            padding: 12px 16px 8px;
+            flex-shrink: 0;
         }
-        .lb-wiki-tabs::-webkit-scrollbar { display: none; }
         .lb-wiki-tab {
-            flex-shrink: 0; padding: 8px 14px; min-height: 38px;
+            padding: 8px 4px; min-height: 36px; width: 100%;
             border-radius: 8px; border: 1px solid var(--border, #1E2D45);
             background: none; color: var(--text-muted, #7B8FAD);
             font-size: 0.78rem; font-weight: 600; cursor: pointer;
-            font-family: inherit; white-space: nowrap;
-            display: inline-flex; align-items: center;
+            font-family: inherit; text-align: center;
+            display: flex; align-items: center; justify-content: center;
             transition: background .15s, color .15s, border-color .15s;
             box-sizing: border-box;
         }

@@ -63,6 +63,9 @@ body {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* overflow-y: auto 적용 시 Android Chrome에서 padding-right가 무시되는 버그 대응 — 명시 재선언 */
+    padding-left: 14px;
+    padding-right: 14px;
     /* 하단 Safe Area만큼만 패딩 (iOS 과도한 여백 방지) */
     padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
