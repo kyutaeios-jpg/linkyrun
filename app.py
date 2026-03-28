@@ -1742,6 +1742,34 @@ def _hop_hint(count) -> str:
         return f'이 문서로 연결된 링크가 {count}개뿐입니다. 도달하기 매우 어려운 문서입니다. 관련 상위 개념 문서를 찾아보세요.'
 
 
+def _extract_hint_links(html: str, max_links: int = 6) -> list:
+    """프록시 HTML에서 /page/ 링크 제목 추출 — namu.wiki 힌트 2용."""
+    from bs4 import BeautifulSoup
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+        seen = set()
+        links = []
+        for a in soup.find_all('a', href=True):
+            href = a['href']
+            if not href.startswith('/page/'):
+                continue
+            m = re.match(r'^/page/([^?#]+)', href)
+            if not m:
+                continue
+            title = urllib.parse.unquote(m.group(1))
+            # 분류, 파일, 틀 등 메타 문서 제외
+            if any(title.startswith(p) for p in ('분류:', '파일:', '틀:', '위키백과:', 'Category:', 'File:', 'Template:')):
+                continue
+            if title not in seen:
+                seen.add(title)
+                links.append(title)
+            if len(links) >= max_links:
+                break
+        return links
+    except Exception:
+        return []
+
+
 @app.route('/api/hint')
 def api_hint():
     title = request.args.get('title', '').strip()
@@ -1763,13 +1791,17 @@ def api_hint():
         hint = f'"{cat}" 에 해당하는 문서입니다.' if cat else '카테고리 정보를 가져올 수 없습니다.'
 
     elif n == 2:
-        # 첫 문장 설명 힌트
+        # 연관 링크 힌트 (namu) / 첫 문장 힌트 (wikipedia)
         if wiki == 'namu':
-            content = get_raw_content(title)
-            desc = _extract_namu_first_sentence(content) if content else ''
+            html = get_page_html(title, wiki)
+            links = _extract_hint_links(html) if html else []
+            if links:
+                hint = f'이 목표 문서에서 연결되는 주요 페이지: {", ".join(links)}\n\n이 키워드들을 통해 도달 경로를 찾아보세요.'
+            else:
+                hint = '연관 링크를 불러올 수 없습니다.'
         else:
             desc = _get_wp_summary(title, wiki)
-        hint = desc if desc else '설명을 불러올 수 없습니다.'
+            hint = desc if desc else '설명을 불러올 수 없습니다.'
 
     elif n == 3:
         # 역링크 기반 도달 가능성 힌트

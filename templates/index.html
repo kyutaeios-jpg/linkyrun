@@ -57,7 +57,7 @@
         }
         .wiki-card {
             display: flex; flex-direction: column; align-items: center;
-            gap: 6px; padding: 20px 12px;
+            gap: 5px; padding: 16px 10px;
             background: var(--card-bg, #0E1525);
             border: 1.5px solid var(--border, #1E2D45);
             border-radius: 16px; cursor: pointer;
@@ -104,11 +104,11 @@
         .daily-card {
             background: linear-gradient(135deg, rgba(255,107,53,0.08), rgba(56,189,248,0.08));
             border-color: rgba(255,107,53,0.3);
-            padding: 18px 20px; cursor: default;
+            padding: 14px 16px; cursor: default;
         }
         .daily-card-header {
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .daily-badge-label {
             font-size: 0.8rem; font-weight: 700;
@@ -121,21 +121,22 @@
         }
         .daily-route {
             display: flex; align-items: center; gap: 8px;
-            font-size: 0.95rem; font-weight: 700;
+            font-size: 0.9rem; font-weight: 700;
             color: var(--text, #F0F4FF);
-            margin-bottom: 14px; flex-wrap: wrap;
+            margin-bottom: 10px; flex-wrap: wrap;
         }
         .daily-route-start { color: #38BDF8; }
         .daily-route-arrow { color: var(--text-muted, #7B8FAD); font-weight: 400; }
         .daily-route-goal  { color: #FF6B35; }
         .daily-start-btn {
-            width: 100%; padding: 13px;
-            background: linear-gradient(135deg, #FF6B35, #FF4ECD);
+            width: 100%; padding: 11px;
+            background: linear-gradient(135deg, #6366F1, #38BDF8);
             color: white; border: none; border-radius: 12px;
             font-weight: 700; cursor: pointer; font-family: inherit;
-            font-size: 0.95rem; box-shadow: 0 4px 16px rgba(255,107,53,0.3);
+            font-size: 0.9rem; box-shadow: 0 4px 16px rgba(56,189,248,0.25);
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        .daily-start-btn:active { opacity: 0.85; }
         .daily-start-btn:disabled { opacity: 0.5; cursor: default; }
         /* ── 챌린지 배너 ── */
         #challenge-banner {
@@ -265,7 +266,7 @@
                     <span style="color:var(--text-muted,#7B8FAD);font-size:0.85rem" data-i18n="lbLoading">불러오는 중…</span>
                 </div>
                 <button class="daily-start-btn" id="btn-daily-start" disabled>
-                    <span data-i18n="btnDailyStart">오늘의 챌린지 시작</span> ▶
+                    📅 <span data-i18n="btnDailyStart">오늘의 챌린지 시작</span>
                 </button>
             </div>
 
