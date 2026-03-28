@@ -111,6 +111,13 @@
                     `<span${isG ? ' class="rh-vpath-goal"' : ''}>${esc(p)}</span>`;
             }).join('');
         }
+        // custom 게임은 랭킹 등록 폼 숨김
+        const rankRow = document.getElementById('rh-rank-row');
+        const rankTitle = document.querySelector('.rh-rank-title');
+        if (gs && gs.difficulty === 'custom') {
+            if (rankRow) rankRow.style.display = 'none';
+            if (rankTitle) rankTitle.style.display = 'none';
+        }
         const ov = document.getElementById('rh-victory');
         if (ov) ov.style.display = 'flex';
     }
@@ -159,19 +166,58 @@
         try { await navigator.clipboard.writeText(text); alert('결과가 복사되었습니다! 📋'); } catch (_) { alert(text); }
     };
 
-    // 내부 링크 클릭 처리 (/page/ 경로로 리라우팅된 링크)
+    // 위키 도메인 목록
+    const WIKI_HOSTS = {
+        'namu.wiki':          '/w/',
+        'ko.wikipedia.org':   '/wiki/',
+        'en.wikipedia.org':   '/wiki/',
+        'de.wikipedia.org':   '/wiki/',
+        'fr.wikipedia.org':   '/wiki/',
+        'ja.wikipedia.org':   '/wiki/',
+        'ko.m.wikipedia.org': '/wiki/',
+        'en.m.wikipedia.org': '/wiki/',
+        'de.m.wikipedia.org': '/wiki/',
+        'fr.m.wikipedia.org': '/wiki/',
+        'ja.m.wikipedia.org': '/wiki/',
+    };
+
+    // 링크 클릭 처리 — 이미 프록시된 /page/ 링크와 미처리 위키 링크 모두 처리
     document.addEventListener('click', function (e) {
         const a = e.target.closest('a');
         if (!a) return;
         const href = a.getAttribute('href') || '';
-        if (!href.startsWith('/page/')) return;
-        const m = href.match(/^\/page\/([^?#]*)/);
-        if (!m) return;
-        const nextTitle = decodeURIComponent(m[1]);
-        if (gs && gs.active) {
-            gs.hops++;
-            gs.path.push(nextTitle);
-            save(gs);
+
+        // 이미 프록시된 링크
+        if (href.startsWith('/page/')) {
+            const m = href.match(/^\/page\/([^?#]*)/);
+            if (m && gs && gs.active) {
+                gs.hops++;
+                gs.path.push(decodeURIComponent(m[1]));
+                save(gs);
+            }
+            return;
+        }
+
+        // 위키 도메인으로 가는 미처리 링크 차단 후 프록시로 리다이렉트
+        let wikiTitle = null;
+        try {
+            const url = new URL(href, window.location.href);
+            const prefix = WIKI_HOSTS[url.hostname];
+            if (prefix && url.pathname.startsWith(prefix)) {
+                wikiTitle = url.pathname.slice(prefix.length).split('?')[0].split('#')[0];
+            }
+        } catch (_) {}
+
+        if (wikiTitle) {
+            e.preventDefault();
+            const currentWiki = typeof WIKI !== 'undefined' ? WIKI : 'namu';
+            const currentGoal = typeof GOAL !== 'undefined' ? GOAL : '';
+            if (gs && gs.active) {
+                gs.hops++;
+                gs.path.push(decodeURIComponent(wikiTitle));
+                save(gs);
+            }
+            window.location.href = `/page/${wikiTitle}?goal=${encodeURIComponent(currentGoal)}&wiki=${encodeURIComponent(currentWiki)}`;
         }
     }, false);
 

@@ -15,68 +15,59 @@
     <link rel="icon" href="/static/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/style.css?v={{ ver }}">
+    <style>
+        /* 언어 선택 버튼 */
+        .lang-selector {
+            position: absolute; top: 16px; right: 16px;
+            z-index: 100;
+        }
+        .lang-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; border-radius: 20px;
+            padding: 6px 14px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .lang-btn:active { opacity: 0.7; }
+        .lang-dropdown {
+            position: absolute; top: calc(100% + 6px); right: 0;
+            background: #0E1525; border: 1px solid #1E2D45;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            min-width: 160px;
+        }
+        .lang-dropdown.hidden { display: none; }
+        .lang-option {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 16px; width: 100%; text-align: left;
+            background: none; border: none; color: #F0F4FF;
+            font-size: 0.88rem; cursor: pointer; font-family: inherit;
+        }
+        .lang-option:hover { background: rgba(255,255,255,0.06); }
+        .lang-option.active { color: #FF6B35; font-weight: 700; }
+    </style>
 </head>
 <body class="index-page">
 
     <!-- ══════════════════════════════════════════
-         화면 0: 위키 선택
+         화면 0: 인트로
     ══════════════════════════════════════════ -->
-    <div class="screen" id="screen-wiki">
-        <header class="hero">
-            <div class="hero-content">
-                <div class="hero-logo">🔗</div>
-                <h1 class="hero-title">Linky Run</h1>
-                <p class="hero-subtitle">링크를 타고 목표 페이지까지 달려가세요</p>
-            </div>
-        </header>
-        <main class="container">
-            <section class="card">
-                <div class="section-title">위키 선택</div>
-                <div class="wiki-grid">
-                    <button class="wiki-card wiki-card-active" data-wiki="namu">
-                        <span class="wiki-flag">🇰🇷</span>
-                        <span class="wiki-name">나무위키</span>
-                        <span class="wiki-lang">Korean</span>
-                    </button>
-                    <button class="wiki-card" data-wiki="ko">
-                        <span class="wiki-flag">🇰🇷</span>
-                        <span class="wiki-name">위키백과</span>
-                        <span class="wiki-lang">한국어</span>
-                    </button>
-                    <button class="wiki-card" data-wiki="en">
-                        <span class="wiki-flag">🇺🇸</span>
-                        <span class="wiki-name">Wikipedia</span>
-                        <span class="wiki-lang">English</span>
-                    </button>
-                    <button class="wiki-card" data-wiki="de">
-                        <span class="wiki-flag">🇩🇪</span>
-                        <span class="wiki-name">Wikipedia</span>
-                        <span class="wiki-lang">Deutsch</span>
-                    </button>
-                    <button class="wiki-card" data-wiki="fr">
-                        <span class="wiki-flag">🇫🇷</span>
-                        <span class="wiki-name">Wikipédia</span>
-                        <span class="wiki-lang">Français</span>
-                    </button>
-                    <button class="wiki-card" data-wiki="ja">
-                        <span class="wiki-flag">🇯🇵</span>
-                        <span class="wiki-name">ウィキペディア</span>
-                        <span class="wiki-lang">日本語</span>
-                    </button>
+    <div class="screen" id="screen-intro">
+        <header class="hero" style="position:relative;">
+            <!-- 언어 선택 버튼 -->
+            <div class="lang-selector">
+                <button class="lang-btn" id="lang-btn">🌐 <span id="lang-btn-label">한국어</span></button>
+                <div class="lang-dropdown hidden" id="lang-dropdown">
+                    <button class="lang-option" data-wiki="namu">🇰🇷 한국어</button>
+                    <button class="lang-option" data-wiki="en">🇺🇸 English</button>
+                    <button class="lang-option" data-wiki="de">🇩🇪 Deutsch</button>
+                    <button class="lang-option" data-wiki="fr">🇫🇷 Français</button>
+                    <button class="lang-option" data-wiki="ja">🇯🇵 日本語</button>
                 </div>
-            </section>
-            <button class="btn-start btn-start-big" id="btn-wiki-next">
-                <span>다음</span>
-                <span class="btn-start-icon">▶</span>
-            </button>
-        </main>
-    </div>
+            </div>
 
-    <!-- ══════════════════════════════════════════
-         화면 1: 인트로
-    ══════════════════════════════════════════ -->
-    <div class="screen screen-hidden" id="screen-intro">
-        <header class="hero">
             <div class="hero-content">
                 <div class="hero-logo">🔗</div>
                 <h1 class="hero-title">Linky Run</h1>
@@ -103,15 +94,11 @@
             <button class="btn-leaderboard-outline" id="btn-open-lb-intro">
                 🏆 랭킹 보기
             </button>
-
-            <button class="btn-back-ghost" id="btn-back-to-wiki" style="display:block;width:100%;text-align:center;margin-top:6px;padding:11px;border-radius:var(--radius-sm);font-size:0.85rem;">
-                ← 위키 다시 선택
-            </button>
         </main>
     </div>
 
     <!-- ══════════════════════════════════════════
-         화면 2: 난이도 선택
+         화면 1: 난이도 선택
     ══════════════════════════════════════════ -->
     <div class="screen screen-hidden" id="screen-difficulty">
         <header class="diff-header">
@@ -125,7 +112,7 @@
             <!-- 랜덤 게임 -->
             <div class="card">
                 <div class="section-title">랜덤 게임</div>
-                <p class="diff-desc">난이도를 고르면 페이지가 자동으로 배정됩니다.</p>
+                <p class="diff-desc">난이도를 고르면 출발지는 랜덤으로, 목표지는 난이도에 맞게 배정됩니다.</p>
                 <div class="diff-grid">
                     <button class="diff-card diff-easy" data-difficulty="easy">
                         <span class="diff-card-icon">🟢</span>
@@ -199,8 +186,7 @@
                 <button class="modal-close" id="close-leaderboard">✕</button>
             </div>
             <div class="lb-tabs">
-                <button class="lb-tab lb-tab-active" data-difficulty="">전체</button>
-                <button class="lb-tab" data-difficulty="easy">🟢 쉬움</button>
+                <button class="lb-tab lb-tab-active" data-difficulty="easy">🟢 쉬움</button>
                 <button class="lb-tab" data-difficulty="medium">🟡 보통</button>
                 <button class="lb-tab" data-difficulty="hard">🟠 어려움</button>
                 <button class="lb-tab" data-difficulty="very_hard">🔴 매우 어려움</button>
@@ -216,8 +202,45 @@
             navigator.serviceWorker.register('/static/sw.js');
         }
 
-        /* ── 위키 선택 ──────────────────────────────── */
-        let selectedWiki = 'namu';
+        /* ── 언어·위키 선택 ──────────────────────────── */
+        const LANG_OPTIONS = {
+            'namu': { label: '한국어', flag: '🇰🇷' },
+            'en':   { label: 'English', flag: '🇺🇸' },
+            'de':   { label: 'Deutsch', flag: '🇩🇪' },
+            'fr':   { label: 'Français', flag: '🇫🇷' },
+            'ja':   { label: '日本語', flag: '🇯🇵' },
+        };
+        const DEVICE_LANG_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+
+        const deviceLang = (navigator.language || 'ko').split('-')[0].toLowerCase();
+        let selectedWiki = DEVICE_LANG_MAP[deviceLang] || 'namu';
+
+        function setWiki(wiki) {
+            selectedWiki = wiki;
+            const opt = LANG_OPTIONS[wiki] || LANG_OPTIONS['namu'];
+            document.getElementById('lang-btn-label').textContent = opt.label;
+            document.querySelectorAll('.lang-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.wiki === wiki);
+            });
+            updateDatalist(wiki);
+            document.getElementById('start-input').value = '';
+            document.getElementById('goal-input').value = '';
+        }
+
+        // 드롭다운 토글
+        document.getElementById('lang-btn').addEventListener('click', e => {
+            e.stopPropagation();
+            document.getElementById('lang-dropdown').classList.toggle('hidden');
+        });
+        document.addEventListener('click', () => {
+            document.getElementById('lang-dropdown').classList.add('hidden');
+        });
+        document.querySelectorAll('.lang-option').forEach(el => {
+            el.addEventListener('click', () => {
+                setWiki(el.dataset.wiki);
+                document.getElementById('lang-dropdown').classList.add('hidden');
+            });
+        });
 
         /* ── 자동완성 ────────────────────────────────── */
         const WIKI_ALL_PAGES = {{ wiki_all_pages | safe }};
@@ -231,7 +254,9 @@
                 dl.appendChild(opt);
             });
         }
-        updateDatalist('namu');
+
+        // 초기화 (기기 언어에 맞춰)
+        setWiki(selectedWiki);
 
         /* ── 화면 전환 ──────────────────────────────── */
         function showScreen(id) {
@@ -240,43 +265,35 @@
         }
 
         /* ── 게임 실행 ──────────────────────────────── */
-        async function launchGame(start, goal, difficulty) {
+        function launchGame(start, goal, difficulty) {
             if (!start || !goal) return;
             if (start === goal) { alert('시작과 목표 페이지가 같습니다.'); return; }
-
-            if (window.pywebview) {
-                await window.pywebview.api.start_game(start, goal, difficulty);
-            } else {
-                const gs = {
-                    start, goal, startTime: Date.now(),
-                    path: [start], hops: 0, active: true,
-                    difficulty: difficulty || 'unknown',
-                    wiki: selectedWiki,
-                };
-                localStorage.setItem('namuSpeedrun', JSON.stringify(gs));
-                document.body.insertAdjacentHTML('beforeend',
-                    `<div id="launch-overlay" style="position:fixed;inset:0;background:rgba(7,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;">
-                        <div style="font-size:2.4rem;animation:spin 1s linear infinite">🔗</div>
-                        <div style="background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem">페이지 불러오는 중…</div>
-                        <div style="color:#7B8FAD;font-size:0.85rem">${start} 준비 중</div>
-                        <style>@keyframes spin{0%{transform:rotate(-15deg) scale(1)}50%{transform:rotate(15deg) scale(1.2)}100%{transform:rotate(-15deg) scale(1)}}</style>
-                    </div>`
-                );
-                window.location.href =
-                    `/page/${encodeURIComponent(start)}?goal=${encodeURIComponent(goal)}&wiki=${encodeURIComponent(selectedWiki)}`;
-            }
+            const gs = {
+                start, goal, startTime: Date.now(),
+                path: [start], hops: 0, active: true,
+                difficulty: difficulty || 'unknown',
+                wiki: selectedWiki,
+            };
+            localStorage.setItem('namuSpeedrun', JSON.stringify(gs));
+            document.body.insertAdjacentHTML('beforeend',
+                `<div id="launch-overlay" style="position:fixed;inset:0;background:rgba(7,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;">
+                    <div style="font-size:2.4rem;animation:spin 1s linear infinite">🔗</div>
+                    <div style="background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem">페이지 불러오는 중…</div>
+                    <div style="color:#7B8FAD;font-size:0.85rem">${start} 준비 중</div>
+                    <style>@keyframes spin{0%{transform:rotate(-15deg) scale(1)}50%{transform:rotate(15deg) scale(1.2)}100%{transform:rotate(-15deg) scale(1)}}</style>
+                </div>`
+            );
+            window.location.href =
+                `/page/${encodeURIComponent(start)}?goal=${encodeURIComponent(goal)}&wiki=${encodeURIComponent(selectedWiki)}`;
         }
 
         async function startByDifficulty(difficulty) {
             const card = document.querySelector(`.diff-card[data-difficulty="${difficulty}"]`);
-            if (card) {
-                card.classList.add('diff-card-loading');
-                card.disabled = true;
-            }
+            if (card) { card.classList.add('diff-card-loading'); card.disabled = true; }
             try {
                 const res  = await fetch(`/api/random-game?difficulty=${difficulty}&wiki=${encodeURIComponent(selectedWiki)}`);
                 const data = await res.json();
-                await launchGame(data.start, data.goal, difficulty);
+                launchGame(data.start, data.goal, difficulty);
             } catch (e) {
                 alert('게임을 불러오지 못했습니다. 다시 시도해주세요.');
             } finally {
@@ -284,15 +301,14 @@
             }
         }
 
-        function randomPage(inputId, btnId) {
+        function randomPage(inputId) {
             const pages = WIKI_ALL_PAGES[selectedWiki] || WIKI_ALL_PAGES['namu'];
             if (!pages || pages.length === 0) return;
-            const pick = pages[Math.floor(Math.random() * pages.length)];
-            document.getElementById(inputId).value = pick;
+            document.getElementById(inputId).value = pages[Math.floor(Math.random() * pages.length)];
         }
 
         /* ── 랭킹 모달 ──────────────────────────────── */
-        let activeLbDifficulty = '';
+        let activeLbDifficulty = 'easy';
 
         function openLeaderboard(difficulty) {
             document.getElementById('leaderboard-modal').hidden = false;
@@ -301,13 +317,12 @@
         function closeLeaderboard() {
             document.getElementById('leaderboard-modal').hidden = true;
         }
-
         function switchLbTab(difficulty) {
-            activeLbDifficulty = difficulty;
+            activeLbDifficulty = difficulty || 'easy';
             document.querySelectorAll('.lb-tab').forEach(t => {
-                t.classList.toggle('lb-tab-active', t.dataset.difficulty === difficulty);
+                t.classList.toggle('lb-tab-active', t.dataset.difficulty === activeLbDifficulty);
             });
-            loadRanking(difficulty);
+            loadRanking(activeLbDifficulty);
         }
 
         function fmtMs(ms) {
@@ -338,12 +353,10 @@
                 let url = `/api/ranking?wiki=${encodeURIComponent(selectedWiki)}&limit=20`;
                 if (difficulty) url += `&difficulty=${encodeURIComponent(difficulty)}`;
                 const data = await fetch(url).then(r => r.json());
-
                 if (!data.rankings?.length) {
                     el.innerHTML = '<div class="lb-empty">아직 기록이 없습니다.<br>첫 번째 도전자가 되어보세요! 🏆</div>';
                     return;
                 }
-
                 const rows = data.rankings.map((r, i) => {
                     const medal = ['🥇','🥈','🥉'][i] ?? `${i+1}`;
                     return `<tr>
@@ -355,7 +368,6 @@
                         <td>${diffBadgeHtml(r.difficulty)}</td>
                     </tr>`;
                 }).join('');
-
                 el.innerHTML = `<table class="lb-table">
                     <thead><tr>
                         <th>순위</th><th>닉네임</th><th>경로</th>
@@ -370,32 +382,15 @@
 
         /* ── 이벤트 연결 ─────────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
-            // 위키 선택
-            document.querySelectorAll('.wiki-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    document.querySelectorAll('.wiki-card').forEach(c => c.classList.remove('wiki-card-active'));
-                    card.classList.add('wiki-card-active');
-                    selectedWiki = card.dataset.wiki;
-                    updateDatalist(selectedWiki);
-                    document.getElementById('start-input').value = '';
-                    document.getElementById('goal-input').value = '';
-                });
-            });
-            document.getElementById('btn-wiki-next').addEventListener('click', () => showScreen('screen-intro'));
-            document.getElementById('btn-back-to-wiki').addEventListener('click', () => showScreen('screen-wiki'));
-
-            // 화면 전환
             document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-difficulty'));
             document.getElementById('btn-back').addEventListener('click', () => showScreen('screen-intro'));
 
-            // 난이도 카드 클릭
             document.querySelectorAll('.diff-card').forEach(card => {
                 card.addEventListener('click', () => startByDifficulty(card.dataset.difficulty));
             });
 
-            // 직접 설정
-            document.getElementById('start-random').addEventListener('click', () => randomPage('start-input', 'start-random'));
-            document.getElementById('goal-random').addEventListener('click', () => randomPage('goal-input', 'goal-random'));
+            document.getElementById('start-random').addEventListener('click', () => randomPage('start-input'));
+            document.getElementById('goal-random').addEventListener('click', () => randomPage('goal-input'));
             document.getElementById('btn-custom-start').addEventListener('click', () => {
                 const start = document.getElementById('start-input').value.trim();
                 const goal  = document.getElementById('goal-input').value.trim();
@@ -409,9 +404,8 @@
                 });
             });
 
-            // 랭킹 모달
-            document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard(''));
-            document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard(''));
+            document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard('easy'));
+            document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard('easy'));
             document.getElementById('close-leaderboard').addEventListener('click', closeLeaderboard);
             document.getElementById('leaderboard-modal').addEventListener('click', e => {
                 if (e.target.id === 'leaderboard-modal') closeLeaderboard();
