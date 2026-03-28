@@ -746,6 +746,9 @@ threading.Thread(target=_warmup_loop, daemon=True).start()
 WORKER_URL   = os.environ.get('WORKER_URL', 'https://linkyrun-proxy.linkyrun.workers.dev/')
 WORKER_TOKEN = os.environ.get('WORKER_TOKEN', 'linkyrun-worker-secret-2024')
 
+# 리다이렉트 맵: redirect_title → canonical_title (예: '안철수' → '안철수 (정치인)')
+_redirect_map: dict = {}
+
 
 def _worker_fetch_namu(title: str):
     """Cloudflare Worker를 통해 namu.wiki 페이지 HTML 반환."""
@@ -757,12 +760,20 @@ def _worker_fetch_namu(title: str):
         with urllib.request.urlopen(req, timeout=20) as r:
             html = r.read().decode('utf-8', errors='replace')
             status = r.status
-            print(f'[Worker:namu] {title}: {status} {len(html)}B', flush=True)
+            final_url = r.headers.get('X-Namu-Url', '')
+            print(f'[Worker:namu] {title}: {status} {len(html)}B final={final_url}', flush=True)
             if status != 200 or len(html) < 1000:
                 return None
             if 'Just a moment' in html or '보안 확인' in html:
                 print(f'[Worker:namu] {title}: CF 챌린지 수신', flush=True)
                 return None
+            # 리다이렉트 감지: 최종 URL이 요청 제목과 다르면 리다이렉트 맵 저장
+            _namu_prefix = 'https://namu.wiki/w/'
+            if final_url.startswith(_namu_prefix):
+                canonical = unquote(final_url[len(_namu_prefix):].split('?')[0].split('#')[0])
+                if canonical and canonical != title:
+                    _redirect_map[title] = canonical
+                    print(f'[Worker:namu] 리다이렉트 감지: {title!r} → {canonical!r}', flush=True)
             return html
     except Exception as e:
         print(f'[Worker:namu] {title}: 에러 {e}', flush=True)
@@ -1428,7 +1439,16 @@ def page(title):
     if wiki_html:
         # Wikipedia 링크 내 언더스코어를 공백으로 정규화해서 is_goal 판단
         norm = lambda s: unquote(s).replace('_', ' ').strip()
-        is_goal = bool(goal) and norm(title) == norm(goal)
+        if bool(goal):
+            nt, ng = norm(title), norm(goal)
+            # 직접 일치 OR 현재 페이지가 목표의 리다이렉트 대상 OR 목표가 현재 페이지의 리다이렉트 대상
+            is_goal = (
+                nt == ng
+                or norm(_redirect_map.get(goal, goal)) == nt
+                or norm(_redirect_map.get(title, title)) == ng
+            )
+        else:
+            is_goal = False
         proxy_html = build_proxy_html(wiki_html, title, goal, wiki)
         return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
@@ -1525,6 +1545,9 @@ def api_random_game():
     for _ in range(8):
         t = _fetch_random_wiki_title(wiki)
         if not t:
+            continue
+        # 리다이렉트 페이지면 제외 (이미 맵에 있거나, 이 호출로 등록됨)
+        if wiki == 'namu' and t in _redirect_map:
             continue
         count = get_backlink_count_for_wiki(t, wiki)
         # 역링크가 너무 적으면 도달 불가 — 제외
@@ -1683,19 +1706,15 @@ def img_proxy():
         'Referer': 'https://namu.wiki/',
     }
     try:
-        # curl_cffi: 브라우저 TLS 핑거프린트로 Cloudflare 우회
+        if cf_requests is None:
+            return ('No HTTP client available', 503)
+        kwargs = {'headers': _headers, 'timeout': 10}
         if _USE_CURL_CFFI:
-            r = cf_requests.get(img_url, headers=_headers, timeout=10, impersonate='chrome110')
-            data = r.content
-            content_type = r.headers.get('Content-Type', 'image/jpeg')
-            status_code = r.status_code
-        else:
-            import urllib.request as _ureq
-            req = _ureq.Request(img_url, headers=_headers)
-            with _ureq.urlopen(req, timeout=10) as r:
-                content_type = r.headers.get('Content-Type', 'image/jpeg')
-                status_code = r.status
-                data = r.read()
+            kwargs['impersonate'] = 'chrome110'
+        r = cf_requests.get(img_url, **kwargs)
+        data = r.content
+        content_type = r.headers.get('Content-Type', 'image/jpeg')
+        status_code = r.status_code
         print(f'[img-proxy] {img_url[:80]}: {status_code} {content_type} {len(data)}B', flush=True)
         # Cloudflare 챌린지 HTML이 내려오면 502
         if content_type.startswith('text/html'):
