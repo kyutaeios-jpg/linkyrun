@@ -103,7 +103,7 @@ window.I18N = {
         dailyDay:              (n) => `Day ${n}`,
         btnDailyStart:         '오늘의 챌린지 시작',
         /* ── challenge a friend ── */
-        btnChallenge:          '도전장 보내기 📨',
+        btnChallenge:          '도전장<br>보내기 📨',
         challengeCopied:       '도전장이 복사됐습니다! 친구에게 공유하세요 🔗',
         challengeBannerTitle:  '🔥 도전장이 도착했습니다!',
         challengeBannerDesc:   (s, g) => `${s} → ${g} 구간을 클리어하세요!`,

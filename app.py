@@ -978,7 +978,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu', 
     <div class="rh-v-actions">
       <button class="rh-v-btn rh-v-btn-primary" onclick="rhPlayAgain()" data-i18n="btnPlayAgain">다시 하기</button>
       <button class="rh-v-btn rh-v-btn-secondary" onclick="rhShare()" data-i18n="btnShare">공유하기 📤</button>
-      <button class="rh-v-btn rh-v-btn-ghost" onclick="rhChallengeFriend()" data-i18n="btnChallenge">친구에게 도전 📨</button>
+      <button class="rh-v-btn rh-v-btn-ghost" onclick="rhChallengeFriend()" data-i18n-html="btnChallenge">도전장<br>보내기 📨</button>
     </div>
   </div>
 </div>
