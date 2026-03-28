@@ -813,6 +813,15 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     wiki_enc = quote(wiki, safe='')
     is_goal  = bool(goal) and title.strip() == goal.strip()
 
+    # 0. [DEBUG] 스크립트 제거 전 원본에서 namu.la 등장 여부 확인
+    if wiki == 'namu':
+        _raw_samples = re.findall(r'.{0,30}namu\.la.{0,60}', wiki_html)
+        if _raw_samples:
+            for s in _raw_samples[:3]:
+                print(f'[build_proxy_raw] namu.la in raw: {s!r}', flush=True)
+        else:
+            print(f'[build_proxy_raw] namu.la NOT found in raw HTML either', flush=True)
+
     # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
 
