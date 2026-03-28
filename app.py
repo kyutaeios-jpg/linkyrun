@@ -812,6 +812,8 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 #app,#app>div:first-child,#app>div:first-child>div:first-child{
     padding-top:0!important;margin-top:0!important
 }
+/* JS가 제거된 환경에서 라이트 모드 색상 기본값 보장 */
+html{color-scheme:light}
 </style>'''
         html = html.replace('</head>', namu_fix + '</head>', 1)
     elif wiki != 'namu' and '</head>' in html:
@@ -863,13 +865,12 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
         rewrite_link, html
     )
 
-    # 4-a. 나무위키 CDN 이미지 URL → Worker 프록시 (핫링크 차단 우회)
+    # 4-a. 나무위키 CDN 이미지 URL → Flask 이미지 프록시 (핫링크 차단 우회)
     if wiki == 'namu':
         def _proxy_img(raw: str) -> str:
             if raw.startswith('//'):
                 raw = 'https:' + raw
-            return (WORKER_URL + '?' +
-                    quote(f'token={WORKER_TOKEN}&type=image&url={raw}', safe='=&'))
+            return f"/img-proxy?url={quote(raw, safe='')}"
 
         # src / data-src 속성의 namu CDN URL 교체
         html = re.sub(
@@ -888,14 +889,14 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
             _rewrite_srcset, html,
         )
 
-    # 4-b. 나머지 상대 URL → 절대 URL (/page/ 제외)
+    # 4-b. 나머지 상대 URL → 절대 URL (/page/, /img-proxy 제외)
     html = re.sub(
-        r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
+        r'(href|src)="(\/(?!\/|page\/|img-proxy)[^"]*)"',
         lambda m: f'{m.group(1)}="https://{host}{m.group(2)}"',
         html,
     )
     html = re.sub(
-        r"(href|src)='(\/(?!\/|page\/)[^']*)'",
+        r"(href|src)='(\/(?!\/|page\/|img-proxy)[^']*)'",
         lambda m: f"{m.group(1)}='https://{host}{m.group(2)}'",
         html,
     )
@@ -1652,6 +1653,50 @@ def api_ranking():
         for r in rows
     ]
     return jsonify({'rankings': results, 'difficulty': difficulty, 'wiki': wiki_filter})
+
+
+@app.route('/img-proxy')
+def img_proxy():
+    """나무위키 CDN 이미지 프록시 (핫링크 차단 우회)."""
+    import urllib.parse as _uparse
+    from flask import Response as _Response
+    img_url = request.args.get('url', '')
+    if not img_url:
+        return ('Missing url', 400)
+    try:
+        parsed = _uparse.urlparse(img_url)
+    except Exception:
+        return ('Invalid url', 400)
+    hostname = parsed.hostname or ''
+    if not (hostname.endswith('.namu.la') or hostname == 'namu.la'):
+        return ('Forbidden', 403)
+
+    _headers = {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9',
+        'Referer': 'https://namu.wiki/',
+    }
+    try:
+        # curl_cffi: 브라우저 TLS 핑거프린트로 Cloudflare 우회
+        if _USE_CURL_CFFI:
+            r = cf_requests.get(img_url, headers=_headers, timeout=10, impersonate='chrome110')
+            data = r.content
+            content_type = r.headers.get('Content-Type', 'image/jpeg')
+        else:
+            import urllib.request as _ureq
+            req = _ureq.Request(img_url, headers=_headers)
+            with _ureq.urlopen(req, timeout=10) as r:
+                content_type = r.headers.get('Content-Type', 'image/jpeg')
+                data = r.read()
+        # Cloudflare 챌린지 HTML이 내려오면 502
+        if content_type.startswith('text/html'):
+            return ('Upstream returned HTML instead of image', 502)
+        resp = _Response(data, status=200, mimetype=content_type)
+        resp.headers['Cache-Control'] = 'public, max-age=86400'
+        return resp
+    except Exception as e:
+        return (f'Proxy error: {e}', 502)
 
 
 @app.route('/api/health')
