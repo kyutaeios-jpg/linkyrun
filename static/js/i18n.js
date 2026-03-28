@@ -96,7 +96,7 @@ window.I18N = {
         loadingPreparing: (p)    => `${p} 준비 중`,
         rankResult:       (rank) => `🏆 ${rank}위 기록 등록 완료!`,
         shareText: (gs, time) =>
-            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops}회\n경로: ${(gs.path||[]).join(' → ')}`,
+            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops}회\n경로: ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 
     en: {
@@ -184,7 +184,7 @@ window.I18N = {
         loadingPreparing: (p)    => `Preparing ${p}`,
         rankResult:       (rank) => `🏆 Ranked #${rank}!`,
         shareText: (gs, time) =>
-            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} hops\nPath: ${(gs.path||[]).join(' → ')}`,
+            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} hops\nPath: ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 
     de: {
@@ -272,7 +272,7 @@ window.I18N = {
         loadingPreparing: (p)    => `${p} wird vorbereitet`,
         rankResult:       (rank) => `🏆 Platz ${rank} eingetragen!`,
         shareText: (gs, time) =>
-            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} Klicks\nPfad: ${(gs.path||[]).join(' → ')}`,
+            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} Klicks\nPfad: ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 
     fr: {
@@ -360,7 +360,7 @@ window.I18N = {
         loadingPreparing: (p)    => `Préparation de ${p}`,
         rankResult:       (rank) => `🏆 Classé ${rank}e !`,
         shareText: (gs, time) =>
-            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} clics\nChemin : ${(gs.path||[]).join(' → ')}`,
+            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops} clics\nChemin : ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 
     ja: {
@@ -448,7 +448,7 @@ window.I18N = {
         loadingPreparing: (p)    => `${p} の準備中`,
         rankResult:       (rank) => `🏆 ${rank}位登録完了！`,
         shareText: (gs, time) =>
-            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops}回\nルート: ${(gs.path||[]).join(' → ')}`,
+            `🔗 Linky Run\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops}回\nルート: ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 };
 

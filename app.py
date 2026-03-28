@@ -873,11 +873,16 @@ html{color-scheme:light}
             return f"/img-proxy?url={quote(raw, safe='')}"
 
         # src / data-src 속성의 namu CDN URL 교체
+        _img_count = [0]
+        def _rewrite_img(m):
+            _img_count[0] += 1
+            return m.group(1) + _proxy_img(m.group(2)) + '"'
         html = re.sub(
             r'((?:src|data-src)=")((https?:)?//[a-z0-9\-]+\.namu\.la/[^"]*)"',
-            lambda m: m.group(1) + _proxy_img(m.group(2)) + '"',
+            _rewrite_img,
             html,
         )
+        print(f'[build_proxy] {title}: img 교체 {_img_count[0]}개', flush=True)
         # srcset 속성 내 각 URL 교체
         def _rewrite_srcset(m):
             def _px(sm):
@@ -1683,12 +1688,15 @@ def img_proxy():
             r = cf_requests.get(img_url, headers=_headers, timeout=10, impersonate='chrome110')
             data = r.content
             content_type = r.headers.get('Content-Type', 'image/jpeg')
+            status_code = r.status_code
         else:
             import urllib.request as _ureq
             req = _ureq.Request(img_url, headers=_headers)
             with _ureq.urlopen(req, timeout=10) as r:
                 content_type = r.headers.get('Content-Type', 'image/jpeg')
+                status_code = r.status
                 data = r.read()
+        print(f'[img-proxy] {img_url[:80]}: {status_code} {content_type} {len(data)}B', flush=True)
         # Cloudflare 챌린지 HTML이 내려오면 502
         if content_type.startswith('text/html'):
             return ('Upstream returned HTML instead of image', 502)
@@ -1696,6 +1704,7 @@ def img_proxy():
         resp.headers['Cache-Control'] = 'public, max-age=86400'
         return resp
     except Exception as e:
+        print(f'[img-proxy] ERROR {img_url[:80]}: {e}', flush=True)
         return (f'Proxy error: {e}', 502)
 
 
