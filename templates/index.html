@@ -399,6 +399,32 @@
             document.getElementById(id).classList.remove('screen-hidden');
         }
 
+        /* ── 로딩 오버레이 ──────────────────────── */
+        const _OVERLAY_STYLE = 'position:fixed;inset:0;background:rgba(7,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;';
+        const _SPIN_STYLE = '@keyframes spin{0%{transform:rotate(-15deg) scale(1)}50%{transform:rotate(15deg) scale(1.2)}100%{transform:rotate(-15deg) scale(1)}}';
+        const _TEXT_STYLE = 'background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem';
+
+        function showLoadingOverlay(subtext) {
+            let el = document.getElementById('launch-overlay');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'launch-overlay';
+                el.style.cssText = _OVERLAY_STYLE;
+                el.innerHTML = `<div style="font-size:2.4rem;animation:spin 1s linear infinite">🔗</div>
+                    <div style="${_TEXT_STYLE}">${t('loadingText')}</div>
+                    <div id="launch-subtext" style="color:#7B8FAD;font-size:0.85rem"></div>
+                    <style>${_SPIN_STYLE}</style>`;
+                document.body.appendChild(el);
+            }
+            const sub = document.getElementById('launch-subtext');
+            if (sub) sub.textContent = subtext || '';
+        }
+
+        function hideLoadingOverlay() {
+            const el = document.getElementById('launch-overlay');
+            if (el) el.remove();
+        }
+
         /* ── 게임 실행 ──────────────────────────── */
         function launchGame(start, goal, difficulty) {
             if (!start || !goal) return;
@@ -410,29 +436,23 @@
                 wiki: selectedWiki,
             };
             localStorage.setItem('namuSpeedrun', JSON.stringify(gs));
-            document.body.insertAdjacentHTML('beforeend',
-                `<div id="launch-overlay" style="position:fixed;inset:0;background:rgba(7,11,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;">
-                    <div style="font-size:2.4rem;animation:spin 1s linear infinite">🔗</div>
-                    <div style="background:linear-gradient(120deg,#FF6B35,#FF4ECD,#38BDF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:1.2rem">${t('loadingText')}</div>
-                    <div style="color:#7B8FAD;font-size:0.85rem">${t('loadingPreparing')(start)}</div>
-                    <style>@keyframes spin{0%{transform:rotate(-15deg) scale(1)}50%{transform:rotate(15deg) scale(1.2)}100%{transform:rotate(-15deg) scale(1)}}</style>
-                </div>`
-            );
+            showLoadingOverlay(t('loadingPreparing')(start));
             window.location.href =
                 `/page/${encodeURIComponent(start)}?goal=${encodeURIComponent(goal)}&wiki=${encodeURIComponent(selectedWiki)}`;
         }
 
         async function startByDifficulty(difficulty) {
             const card = document.querySelector(`.diff-card[data-difficulty="${difficulty}"]`);
-            if (card) { card.classList.add('diff-card-loading'); card.disabled = true; }
+            if (card) card.disabled = true;
+            showLoadingOverlay(t('loadingSearching'));
             try {
                 const res  = await fetch(`/api/random-game?difficulty=${difficulty}&wiki=${encodeURIComponent(selectedWiki)}`);
                 const data = await res.json();
                 launchGame(data.start, data.goal, difficulty);
             } catch (e) {
+                hideLoadingOverlay();
+                if (card) card.disabled = false;
                 alert(t('alertLoadFail'));
-            } finally {
-                if (card) { card.classList.remove('diff-card-loading'); card.disabled = false; }
             }
         }
 
