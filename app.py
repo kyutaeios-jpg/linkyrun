@@ -804,14 +804,15 @@ def get_page_html(title: str, wiki: str = 'namu'):
     return _call_pw(_fetch, timeout=120)
 
 
-def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') -> str:
+def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu', is_goal: bool = None) -> str:
     """위키 HTML을 게임 프록시 페이지로 변환."""
     cfg      = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
     host     = cfg['host']
     prefix   = cfg['link_prefix']   # '/w/' or '/wiki/'
     goal_enc = quote(goal, safe='')
     wiki_enc = quote(wiki, safe='')
-    is_goal  = bool(goal) and title.strip() == goal.strip()
+    if is_goal is None:
+        is_goal = bool(goal) and title.strip() == goal.strip()
 
     # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
@@ -1433,7 +1434,7 @@ def page(title):
             )
         else:
             is_goal = False
-        proxy_html = build_proxy_html(wiki_html, title, goal, wiki)
+        proxy_html = build_proxy_html(wiki_html, title, goal, wiki, is_goal=is_goal)
         return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
     # 폴백: 나무위키만 링크 목록 UI 제공
@@ -1542,14 +1543,15 @@ def api_random_game():
             goal = t
             break
 
-    # 랜덤 시도 실패 시 기존 정적 풀로 폴백
+    # 랜덤 시도 실패 시 기존 정적 풀로 폴백 (리다이렉트 페이지 제외)
     if not goal:
         if wiki == 'namu':
             fallback = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
         else:
             wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
             fallback = wiki_pool.get(difficulty, wiki_pool.get('easy', []))
-        goal = random.choice(fallback) if fallback else None
+        candidates = [p for p in fallback if p not in _redirect_map]
+        goal = random.choice(candidates) if candidates else (random.choice(fallback) if fallback else None)
 
     if not goal:
         return jsonify({'error': 'goal page not found'}), 500
@@ -1795,43 +1797,53 @@ def _extract_hint_links(html: str, max_links: int = 6) -> list:
 def api_hint():
     title = request.args.get('title', '').strip()
     wiki  = request.args.get('wiki', 'namu')
-    n     = int(request.args.get('n', 1))
+    try:
+        n = int(request.args.get('n', 1))
+    except ValueError:
+        return jsonify({'error': 'n must be 1-3'}), 400
     if not title:
         return jsonify({'error': 'title required'}), 400
 
-    if n == 1:
-        # 카테고리 힌트
-        cat = PAGE_CATEGORIES.get(title)
-        if not cat and wiki == 'namu':
-            # get_raw_content 대신 Worker HTML에서 분류 링크 파싱 (CF /raw/ 차단 우회)
-            html = get_page_html(title, wiki)
-            if html:
-                cat = _extract_namu_category_from_html(html)
-        if not cat and wiki != 'namu':
-            summ = _get_wp_summary(title, wiki)
-            cat = summ
-        hint = f'"{cat}" 카테고리에 해당하는 문서입니다.' if cat else '카테고리 정보를 불러올 수 없습니다.'
+    try:
+        if n == 1:
+            # 카테고리 힌트
+            cat = PAGE_CATEGORIES.get(title)
+            if not cat:
+                # Worker HTML에서 분류 링크 파싱
+                html = get_page_html(title, wiki)
+                if html:
+                    if wiki == 'namu':
+                        cat = _extract_namu_category_from_html(html)
+                    else:
+                        cat = _get_wp_summary(title, wiki)
+            hint = f'"{cat}" 카테고리에 해당하는 문서입니다.' if cat else f'"{title}" 문서의 카테고리 정보를 불러올 수 없습니다. 제목에서 유추해 보세요.'
 
-    elif n == 2:
-        # 연관 링크 힌트 (namu) / 첫 문장 힌트 (wikipedia)
-        if wiki == 'namu':
-            html = get_page_html(title, wiki)
-            links = _extract_hint_links(html) if html else []
-            if links:
-                hint = f'이 목표 문서에서 연결되는 주요 페이지: {", ".join(links)}\n\n이 키워드들을 통해 도달 경로를 찾아보세요.'
+        elif n == 2:
+            # 연관 링크 힌트 (namu) / 첫 문장 힌트 (wikipedia)
+            if wiki == 'namu':
+                html = get_page_html(title, wiki)
+                links = _extract_hint_links(html) if html else []
+                if links:
+                    hint = f'이 목표 문서에서 연결되는 주요 페이지: {", ".join(links)}\n\n이 키워드들을 통해 도달 경로를 찾아보세요.'
+                else:
+                    # 폴백: 역링크 힌트로 대체
+                    count = get_backlink_count_for_wiki(title, wiki)
+                    hint = _hop_hint(count) if count is not None else f'"{title}" 관련 링크 정보를 불러올 수 없습니다.'
             else:
-                hint = '연관 링크를 불러올 수 없습니다.'
+                desc = _get_wp_summary(title, wiki)
+                hint = desc if desc else '설명을 불러올 수 없습니다.'
+
+        elif n == 3:
+            # 역링크 기반 도달 가능성 힌트
+            count = get_backlink_count_for_wiki(title, wiki)
+            hint = _hop_hint(count)
+
         else:
-            desc = _get_wp_summary(title, wiki)
-            hint = desc if desc else '설명을 불러올 수 없습니다.'
+            return jsonify({'error': 'n must be 1-3'}), 400
 
-    elif n == 3:
-        # 역링크 기반 도달 가능성 힌트
-        count = get_backlink_count_for_wiki(title, wiki)
-        hint = _hop_hint(count)
-
-    else:
-        return jsonify({'error': 'n must be 1-3'}), 400
+    except Exception as e:
+        print(f'[hint] 오류: {e}', flush=True)
+        hint = '힌트 서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
 
     return jsonify({'hint': hint, 'n': n, 'title': title})
 
@@ -1851,14 +1863,17 @@ def api_daily():
         if not pool:
             pool = POPULAR_PAGES
 
+    # 리다이렉트 페이지 제외
+    filtered_pool = [p for p in pool if p not in _redirect_map] or pool
+
     seed_s = hashlib.sha256(f'{today}:{wiki}:start'.encode()).digest()
     seed_g = hashlib.sha256(f'{today}:{wiki}:goal'.encode()).digest()
-    idx_s = int.from_bytes(seed_s[:4], 'big') % len(pool)
-    idx_g = int.from_bytes(seed_g[:4], 'big') % len(pool)
+    idx_s = int.from_bytes(seed_s[:4], 'big') % len(filtered_pool)
+    idx_g = int.from_bytes(seed_g[:4], 'big') % len(filtered_pool)
     if idx_s == idx_g:
-        idx_g = (idx_g + 1) % len(pool)
+        idx_g = (idx_g + 1) % len(filtered_pool)
 
-    return jsonify({'start': pool[idx_s], 'goal': pool[idx_g],
+    return jsonify({'start': filtered_pool[idx_s], 'goal': filtered_pool[idx_g],
                     'day': day_num, 'date': today, 'wiki': wiki})
 
 
