@@ -677,24 +677,22 @@
                     el.innerHTML = `<div class="lb-empty">${t('lbEmpty')}</div>`;
                     return;
                 }
-                const rows = data.rankings.map((r, i) => {
-                    const medal = ['🥇','🥈','🥉'][i] ?? `${i+1}`;
-                    return `<tr>
-                        <td class="lb-rank">${medal}</td>
-                        <td class="lb-nick">${esc(r.nickname)}</td>
-                        <td class="lb-route">${esc(r.start)} → ${esc(r.goal)}</td>
-                        <td class="lb-hops">${r.hops}${t('hopsUnit')}</td>
-                        <td class="lb-time">${fmtMs(r.elapsed_ms)}</td>
-                        <td>${diffBadgeHtml(r.difficulty)}</td>
-                    </tr>`;
+                const entries = data.rankings.map((r, i) => {
+                    const medal = ['🥇','🥈','🥉'][i] ?? `<span style="font-size:0.9rem;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
+                    return `<div class="lb-entry">
+                        <div class="lb-entry-top">
+                            <span class="lb-entry-rank">${medal}</span>
+                            <span class="lb-entry-nick">${esc(r.nickname)}</span>
+                            <span class="lb-entry-meta">
+                                <span class="lb-entry-time">⏱ ${fmtMs(r.elapsed_ms)}</span>
+                                <span class="lb-entry-hops">🔗 ${r.hops}${t('hopsUnit')}</span>
+                                ${diffBadgeHtml(r.difficulty)}
+                            </span>
+                        </div>
+                        <div class="lb-entry-route">${esc(r.start)} → ${esc(r.goal)}</div>
+                    </div>`;
                 }).join('');
-                el.innerHTML = `<table class="lb-table">
-                    <thead><tr>
-                        <th>${t('lbRank')}</th><th>${t('lbNick')}</th><th>${t('lbRoute')}</th>
-                        <th>${t('lbHops')}</th><th>${t('lbTime')}</th><th>${t('lbDifficulty')}</th>
-                    </tr></thead>
-                    <tbody>${rows}</tbody>
-                </table>`;
+                el.innerHTML = `<div class="lb-list">${entries}</div>`;
             } catch {
                 el.innerHTML = `<div class="lb-empty">${t('lbFail')}</div>`;
             }

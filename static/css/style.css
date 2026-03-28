@@ -626,24 +626,42 @@ kbd {
 .lb-goal-tag { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 12px; }
 .lb-goal-tag b { color: var(--text); }
 
-.lb-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.lb-table th {
-    text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
-    color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+/* ── 랭킹 카드 (테이블 대신 카드형) ─────────────────────── */
+.lb-list { display: flex; flex-direction: column; padding: 8px 0; }
+
+.lb-entry {
+    padding: 12px 20px; border-bottom: 1px solid rgba(30,45,69,0.6);
+    display: flex; flex-direction: column; gap: 5px;
 }
-.lb-table td { padding: 10px 10px; border-bottom: 1px solid rgba(30,45,69,0.6); vertical-align: middle; }
-.lb-table tr:last-child td { border-bottom: none; }
-.lb-table tr:hover td { background: rgba(255,255,255,0.02); }
+.lb-entry:last-child { border-bottom: none; }
 
-.lb-rank  { font-weight: 700; width: 40px; font-size: 1rem; }
-.lb-nick  { font-weight: 600; color: var(--text); }
-.lb-hops  { color: var(--accent); font-weight: 700; text-align: right; }
-.lb-time  { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.lb-route { font-size: 0.78rem; color: var(--text-dim); }
-
+.lb-entry-top {
+    display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.lb-entry-rank {
+    font-size: 1.15rem; flex-shrink: 0; width: 28px; text-align: center;
+}
+.lb-entry-nick {
+    font-weight: 700; color: var(--text); font-size: 0.92rem;
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lb-entry-meta {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.lb-entry-time {
+    font-variant-numeric: tabular-nums; font-size: 0.85rem;
+    color: var(--text-muted); font-weight: 600;
+}
+.lb-entry-hops {
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+}
+.lb-entry-route {
+    font-size: 0.78rem; color: var(--text-dim);
+    padding-left: 38px; line-height: 1.5; word-break: break-all;
+}
 .lb-diff {
     display: inline-block; padding: 2px 8px; border-radius: 12px; border: 1px solid;
-    font-size: 0.73rem; font-weight: 600; white-space: nowrap;
+    font-size: 0.7rem; font-weight: 600; white-space: nowrap;
 }
 
 /* ── Ranking form in victory ─────────────────────────────── */

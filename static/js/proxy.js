@@ -236,23 +236,29 @@
     };
 
     /* ── 힌트 시스템 ─────────────────────────────────────── */
-    window.rhShowHint = function () {
+    window.rhShowHint = async function () {
         if (!gs || !gs.goal) return;
         const used = gs.hintsUsed || 0;
-        const goal = gs.goal;
         if (used >= 3) { alert(t('hintNoMore')); return; }
-        let msg;
-        if (used === 0) {
-            msg = t('hint1')(goal.length);
-        } else if (used === 1) {
-            msg = t('hint2')(goal[0]);
-        } else {
-            const half = Math.ceil(goal.length / 2);
-            msg = t('hint3')(goal.slice(0, half) + '—'.repeat(goal.length - half));
+
+        const n = used + 1;
+        const wiki = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        const btn = document.querySelector('.rh-btn-hint');
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch(
+                `/api/hint?title=${encodeURIComponent(gs.goal)}&wiki=${encodeURIComponent(wiki)}&n=${n}`
+            );
+            const data = await res.json();
+            gs.hintsUsed = n;
+            save(gs);
+            const labels = { 1: '카테고리', 2: '설명', 3: '도달 가능성' };
+            alert(`💡 힌트 ${n}/3 — ${labels[n]}\n\n${data.hint}`);
+        } catch (_) {
+            alert('힌트를 불러오지 못했습니다.');
+        } finally {
+            if (btn) btn.disabled = false;
         }
-        gs.hintsUsed = used + 1;
-        save(gs);
-        alert(msg);
     };
 
     // 위키 도메인 목록

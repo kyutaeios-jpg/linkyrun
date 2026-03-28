@@ -1575,6 +1575,213 @@ def api_random_game():
     return jsonify({'start': start, 'goal': goal, 'difficulty': difficulty, 'wiki': wiki})
 
 
+# ── 힌트 시스템 ───────────────────────────────────────────────
+
+# 주요 페이지 카테고리 분류 (힌트 1용)
+PAGE_CATEGORIES = {
+    # 국가
+    '대한민국':'국가', '일본':'국가', '중국':'국가', '미국':'국가',
+    '영국':'국가', '프랑스':'국가', '독일':'국가', '이탈리아':'국가',
+    '스페인':'국가', '캐나다':'국가', '호주':'국가', '브라질':'국가',
+    '러시아':'국가', '인도':'국가', '멕시코':'국가',
+    # 도시
+    '서울특별시':'도시', '부산광역시':'도시', '대구광역시':'도시',
+    '인천광역시':'도시', '광주광역시':'도시', '대전광역시':'도시',
+    '뉴욕':'도시', '런던':'도시', '파리':'도시', '도쿄':'도시',
+    '베이징':'도시', '로마':'도시', '시드니':'도시', '두바이':'도시',
+    '싱가포르':'도시', '방콕':'도시', '베를린':'도시', '오사카':'도시',
+    # K-pop / 연예
+    'BTS':'K-pop 그룹', '방탄소년단':'K-pop 그룹', '블랙핑크':'K-pop 그룹',
+    '아이유':'가수 겸 배우', '뉴진스':'K-pop 그룹', '에스파':'K-pop 그룹',
+    '르세라핌':'K-pop 그룹', '아이브':'K-pop 그룹', '세븐틴':'K-pop 그룹',
+    '스트레이 키즈':'K-pop 그룹', '트와이스':'K-pop 그룹', '엑소':'K-pop 그룹',
+    '샤이니':'K-pop 그룹', '레드벨벳':'K-pop 그룹', '소녀시대':'K-pop 그룹',
+    '빅뱅':'K-pop 그룹', '2NE1':'K-pop 그룹',
+    # 역사 인물
+    '나폴레옹':'역사 인물 (프랑스 군인·황제)',
+    '셰익스피어':'역사 인물 (영국 극작가)',
+    '아인슈타인':'과학자 (물리학자)',
+    '레오나르도 다 빈치':'역사 인물 (예술가·발명가)',
+    '세종대왕':'역사 인물 (조선 국왕)',
+    '이순신':'역사 인물 (조선 장군)',
+    '광개토대왕':'역사 인물 (고구려 국왕)',
+    '스티브 잡스':'기업인 (애플 창업자)',
+    '일론 머스크':'기업인 (테슬라·SpaceX)',
+    # 음악 아티스트
+    '비틀즈':'록 밴드 (영국)', '마이클 잭슨':'팝 가수 (미국)',
+    '테일러 스위프트':'팝 가수 (미국)', '에드 시런':'팝 가수 (영국)',
+    '모차르트':'클래식 작곡가', '베토벤':'클래식 작곡가',
+    '퀸':'록 밴드 (영국)',
+    # 드라마/영화
+    '오징어 게임':'드라마 (넷플릭스 시리즈)',
+    '기생충':'영화 (아카데미 수상작)',
+    '어벤져스':'영화 (마블 시네마틱 유니버스)',
+    '해리 포터':'소설·영화 시리즈',
+    '반지의 제왕':'소설·영화 시리즈',
+    '스타워즈':'영화 시리즈',
+    # 스포츠
+    '축구':'스포츠 종목', '야구':'스포츠 종목', '농구':'스포츠 종목',
+    '올림픽':'국제 스포츠 대회', '월드컵':'국제 축구 대회',
+    '손흥민':'축구 선수', '류현진':'야구 선수', '김연아':'피겨스케이팅 선수',
+    '호날두':'축구 선수', '메시':'축구 선수',
+    '르브론 제임스':'농구 선수', '마이클 조던':'농구 선수',
+    # 음식
+    '김치':'한국 전통 음식', '라면':'인스턴트 면 요리',
+    '치킨':'음식 (닭 요리)', '떡볶이':'한국 길거리 음식',
+    '삼겹살':'한국 음식 (돼지고기 부위)',
+    '피자':'이탈리아에서 기원한 음식', '햄버거':'패스트푸드',
+    '커피':'음료', '소주':'한국 증류주', '막걸리':'한국 전통 술',
+    # 게임/애니
+    '마인크래프트':'비디오 게임 (샌드박스)',
+    '포켓몬스터':'게임·미디어 프랜차이즈',
+    '리그 오브 레전드':'온라인 게임 (MOBA)',
+    '원피스':'일본 만화·애니메이션',
+    '나루토':'일본 만화·애니메이션',
+    '드래곤볼':'일본 만화·애니메이션',
+    '귀멸의 칼날':'일본 만화·애니메이션',
+    '진격의 거인':'일본 만화·애니메이션',
+    # 과학/기술
+    '인터넷':'정보통신 기술', '컴퓨터':'전자기기',
+    '스마트폰':'모바일 전자기기',
+    '인공지능':'컴퓨터 과학 분야',
+    '블랙홀':'천문학 현상',
+    '지구':'행성', '태양':'항성', '달':'지구의 위성',
+    '물리학':'자연과학 분야', '화학':'자연과학 분야',
+    '수학':'학문 분야',
+    # 기업
+    '삼성전자':'전자·기술 기업 (한국)',
+    '애플':'전자·기술 기업 (미국)',
+    '구글':'인터넷·기술 기업 (미국)',
+    '테슬라':'전기차·기술 기업',
+    '넷플릭스':'온라인 동영상 스트리밍 서비스',
+    '유튜브':'온라인 동영상 플랫폼',
+    # 역사 사건/왕조
+    '제2차 세계 대전':'역사 사건 (전쟁)',
+    '한국전쟁':'역사 사건 (전쟁)',
+    '임진왜란':'역사 사건 (조선-일본 전쟁)',
+    '조선':'한국의 역사 왕조',
+    '고려':'한국의 역사 왕조',
+    '로마 제국':'고대 국가',
+    # 동물
+    '고양이':'동물 (포유류)', '개':'동물 (포유류)',
+    '공룡':'멸종된 파충류', '호랑이':'동물 (포유류)',
+}
+
+
+def _extract_namu_category(content: str) -> str:
+    """나무마크 원문에서 [[분류:X]] 태그 추출."""
+    cats = re.findall(r'\[\[분류:([^\]|#]+)', content)
+    if cats:
+        return ' / '.join(c.strip() for c in cats[:3])
+    return ''
+
+
+def _extract_namu_first_sentence(content: str) -> str:
+    """나무마크 원문에서 첫 설명 문장 추출."""
+    for line in content.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        # 메타 라인 건너뜀
+        if line.startswith(('[목차]', '== ', '#redirect', '||')):
+            continue
+        if re.match(r'^\[\[(분류|파일|File|이미지):', line):
+            continue
+        if re.match(r'^\{', line):
+            continue
+        # 마크업 제거
+        line = re.sub(r'\[\[([^\]|]+)\|([^\]]+)\]\]', r'\2', line)
+        line = re.sub(r'\[\[([^\]]+)\]\]', r'\1', line)
+        line = re.sub(r"'{2,3}", '', line)
+        line = re.sub(r'\{\{[^}]*\}\}', '', line)
+        line = re.sub(r'\[.*?\]', '', line)
+        line = line.strip()
+        if len(line) < 15:
+            continue
+        # 첫 문장 (마침표/이다 기준)
+        for end in ['. ', '이다.', '다.', '다)', '이다)', '임.', '。']:
+            idx = line.find(end)
+            if idx > 10:
+                line = line[:idx + len(end)].strip()
+                break
+        return line[:200]
+    return ''
+
+
+def _get_wp_summary(title: str, lang: str) -> str:
+    """Wikipedia REST API로 첫 문단 요약 반환."""
+    import urllib.request as _ureq, urllib.parse as _uparse
+    try:
+        url = f'https://{lang}.wikipedia.org/api/rest_v1/page/summary/{_uparse.quote(title)}'
+        req = _ureq.Request(url, headers={'User-Agent': 'LinkyRun/1.0'})
+        with _ureq.urlopen(req, timeout=8) as r:
+            data = json.loads(r.read().decode())
+        extract = data.get('extract', '')
+        if extract:
+            for punct in ['. ', '.\n']:
+                idx = extract.find(punct)
+                if idx > 10:
+                    return extract[:idx + 1]
+            return extract[:200]
+    except Exception as e:
+        print(f'[wp-summary:{lang}/{title}] {e}', flush=True)
+    return ''
+
+
+def _hop_hint(count) -> str:
+    """역링크 수 기반 도달 가능성 힌트."""
+    if count is None:
+        return '역링크 정보를 가져올 수 없습니다.'
+    if count >= 500:
+        return f'이 문서로 연결된 링크가 {count}개 이상입니다. 인기 문서를 통해 2~3번 만에 도달할 수 있습니다.'
+    elif count >= 100:
+        return f'이 문서로 연결된 링크가 약 {count}개입니다. 관련 주제 문서를 거쳐 3~4번이면 도달할 수 있습니다.'
+    elif count >= 20:
+        return f'이 문서로 연결된 링크가 {count}개입니다. 직접 링크하는 문서가 적어 여러 번 거쳐야 할 수 있습니다.'
+    else:
+        return f'이 문서로 연결된 링크가 {count}개뿐입니다. 도달하기 매우 어려운 문서입니다. 관련 상위 개념 문서를 찾아보세요.'
+
+
+@app.route('/api/hint')
+def api_hint():
+    title = request.args.get('title', '').strip()
+    wiki  = request.args.get('wiki', 'namu')
+    n     = int(request.args.get('n', 1))
+    if not title:
+        return jsonify({'error': 'title required'}), 400
+
+    if n == 1:
+        # 카테고리 힌트
+        cat = PAGE_CATEGORIES.get(title)
+        if not cat and wiki == 'namu':
+            content = get_raw_content(title)
+            if content:
+                cat = _extract_namu_category(content)
+        if not cat and wiki != 'namu':
+            summ = _get_wp_summary(title, wiki)
+            cat = summ
+        hint = f'"{cat}" 에 해당하는 문서입니다.' if cat else '카테고리 정보를 가져올 수 없습니다.'
+
+    elif n == 2:
+        # 첫 문장 설명 힌트
+        if wiki == 'namu':
+            content = get_raw_content(title)
+            desc = _extract_namu_first_sentence(content) if content else ''
+        else:
+            desc = _get_wp_summary(title, wiki)
+        hint = desc if desc else '설명을 불러올 수 없습니다.'
+
+    elif n == 3:
+        # 역링크 기반 도달 가능성 힌트
+        count = get_backlink_count_for_wiki(title, wiki)
+        hint = _hop_hint(count)
+
+    else:
+        return jsonify({'error': 'n must be 1-3'}), 400
+
+    return jsonify({'hint': hint, 'n': n, 'title': title})
+
+
 @app.route('/api/daily')
 def api_daily():
     import hashlib
