@@ -894,6 +894,12 @@ html{color-scheme:light}
             html,
         )
         print(f'[build_proxy] {title}: img 교체 {_img_count[0]}개', flush=True)
+        if _img_count[0] == 0:
+            # namu.la가 HTML에 어떤 형식으로 있는지 샘플 출력
+            import re as _re2
+            samples = _re2.findall(r'.{0,40}namu\.la.{0,60}', html)
+            for s in samples[:5]:
+                print(f'[build_proxy] namu.la sample: {s!r}', flush=True)
         # srcset 속성 내 각 URL 교체
         def _rewrite_srcset(m):
             def _px(sm):
