@@ -895,11 +895,22 @@ html{color-scheme:light}
         )
         print(f'[build_proxy] {title}: img 교체 {_img_count[0]}개', flush=True)
         if _img_count[0] == 0:
-            # namu.la가 HTML에 어떤 형식으로 있는지 샘플 출력
             import re as _re2
-            samples = _re2.findall(r'.{0,40}namu\.la.{0,60}', html)
-            for s in samples[:5]:
-                print(f'[build_proxy] namu.la sample: {s!r}', flush=True)
+            # <img 태그 전체 샘플 (src 형태 확인)
+            img_tags = _re2.findall(r'<img[^>]{0,200}>', html)
+            for t in img_tags[:3]:
+                print(f'[build_proxy] img tag: {t!r}', flush=True)
+            # figure/picture 태그 샘플
+            fig_tags = _re2.findall(r'<(?:figure|picture|source)[^>]{0,200}>', html)
+            for t in fig_tags[:3]:
+                print(f'[build_proxy] media tag: {t!r}', flush=True)
+            # namu.la 포함 여부 (다른 속성도 포함)
+            samples = _re2.findall(r'.{0,30}namu\.la.{0,50}', html)
+            for s in samples[:3]:
+                print(f'[build_proxy] namu.la ctx: {s!r}', flush=True)
+            # __NUXT__ 또는 JSON 상태 여부
+            if '__NUXT__' in html or 'window.__' in html:
+                print(f'[build_proxy] NUXT state found in HTML', flush=True)
         # srcset 속성 내 각 URL 교체
         def _rewrite_srcset(m):
             def _px(sm):
