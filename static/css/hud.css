@@ -193,6 +193,16 @@ body {
     background: rgba(255,255,255,0.06);
     color: var(--rh-text); border: 1px solid var(--rh-border);
 }
+.rh-v-btn-ghost {
+    background: transparent;
+    color: var(--rh-muted); border: 1px solid var(--rh-border);
+}
+.rh-v-actions { flex-wrap: wrap; }
+.rh-btn-hint {
+    background: rgba(56,189,248,0.10);
+    border-color: rgba(56,189,248,0.3);
+    color: var(--rh-accent);
+}
 
 /* ── 포기 확인 모달 ─────────────────────────────────────── */
 #rh-giveup-modal {

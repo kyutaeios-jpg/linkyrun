@@ -98,6 +98,114 @@
             border-radius: 10px; padding: 2px 8px;
             margin-left: 6px; vertical-align: middle;
         }
+        /* ── 데일리 챌린지 카드 ── */
+        .daily-card {
+            background: linear-gradient(135deg, rgba(255,107,53,0.08), rgba(56,189,248,0.08));
+            border-color: rgba(255,107,53,0.3);
+            padding: 18px 20px; cursor: default;
+        }
+        .daily-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .daily-badge-label {
+            font-size: 0.8rem; font-weight: 700;
+            color: var(--accent, #FF6B35);
+            background: rgba(255,107,53,0.12);
+            border-radius: 20px; padding: 3px 10px;
+        }
+        .daily-day-num {
+            font-size: 0.75rem; color: var(--text-muted, #7B8FAD); font-weight: 600;
+        }
+        .daily-route {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.95rem; font-weight: 700;
+            color: var(--text, #F0F4FF);
+            margin-bottom: 14px; flex-wrap: wrap;
+        }
+        .daily-route-start { color: #38BDF8; }
+        .daily-route-arrow { color: var(--text-muted, #7B8FAD); font-weight: 400; }
+        .daily-route-goal  { color: #FF6B35; }
+        .daily-start-btn {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #FF6B35, #FF4ECD);
+            color: white; border: none; border-radius: 12px;
+            font-weight: 700; cursor: pointer; font-family: inherit;
+            font-size: 0.95rem; box-shadow: 0 4px 16px rgba(255,107,53,0.3);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .daily-start-btn:disabled { opacity: 0.5; cursor: default; }
+        /* ── 챌린지 배너 ── */
+        #challenge-banner {
+            background: linear-gradient(135deg, rgba(255,78,205,0.12), rgba(56,189,248,0.12));
+            border: 1px solid rgba(255,78,205,0.3);
+            border-radius: 16px; padding: 16px 18px;
+            margin-bottom: 12px; position: relative;
+        }
+        .challenge-banner-title {
+            font-size: 1rem; font-weight: 800; color: var(--text, #F0F4FF);
+            margin-bottom: 4px;
+        }
+        .challenge-banner-desc {
+            font-size: 0.85rem; color: var(--text-muted, #7B8FAD);
+            margin-bottom: 12px; word-break: break-all;
+        }
+        .challenge-accept-btn {
+            width: 100%; padding: 11px;
+            background: linear-gradient(135deg, #FF4ECD, #38BDF8);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 700; cursor: pointer; font-family: inherit; font-size: 0.9rem;
+        }
+        .challenge-dismiss-btn {
+            position: absolute; top: 10px; right: 12px;
+            background: none; border: none; color: var(--text-muted, #7B8FAD);
+            font-size: 1rem; cursor: pointer; padding: 4px;
+        }
+        /* ── 스탯 모달 ── */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .stats-cell {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border, #1E2D45);
+            border-radius: 12px; padding: 12px; text-align: center;
+        }
+        .stats-cell-label {
+            font-size: 0.72rem; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted, #7B8FAD);
+            margin-bottom: 4px;
+        }
+        .stats-cell-val {
+            font-size: 1.4rem; font-weight: 800; color: var(--accent, #FF6B35);
+            font-variant-numeric: tabular-nums;
+        }
+        .stats-diff-title {
+            font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted, #7B8FAD);
+            margin: 4px 0 8px;
+        }
+        .stats-diff-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid var(--border, #1E2D45);
+            font-size: 0.85rem;
+        }
+        .stats-diff-row:last-child { border-bottom: none; }
+        .stats-diff-name { font-weight: 600; color: var(--text, #F0F4FF); }
+        .stats-diff-detail { color: var(--text-muted, #7B8FAD); font-size: 0.78rem; text-align: right; }
+        .stats-reset-btn {
+            width: 100%; padding: 10px; margin-top: 8px;
+            background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.25);
+            color: #FF4D6D; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+        }
+        /* ── 하단 버튼 행 ── */
+        .intro-actions {
+            display: flex; gap: 8px;
+        }
+        .intro-actions .btn-leaderboard-outline {
+            flex: 1; margin: 0;
+        }
     </style>
 </head>
 <body class="index-page">
@@ -127,6 +235,14 @@
         </header>
 
         <main class="container">
+            <!-- 챌린지 배너 (친구 도전장) -->
+            <div id="challenge-banner" style="display:none">
+                <div class="challenge-banner-title" id="challenge-banner-title">🔥 친구의 도전장!</div>
+                <div class="challenge-banner-desc" id="challenge-banner-desc"></div>
+                <button class="challenge-accept-btn" id="challenge-accept-btn" data-i18n="challengeAccept">도전 수락 ▶</button>
+                <button class="challenge-dismiss-btn" onclick="document.getElementById('challenge-banner').style.display='none'">✕</button>
+            </div>
+
             <section class="card rules-card">
                 <h3 class="section-title" data-i18n="howToPlay">게임 방법</h3>
                 <ol class="rules-list">
@@ -137,14 +253,33 @@
                 </ol>
             </section>
 
+            <!-- 오늘의 챌린지 카드 -->
+            <div class="card daily-card" id="daily-card" style="display:none">
+                <div class="daily-card-header">
+                    <span class="daily-badge-label" data-i18n="dailyBadge">오늘의 챌린지</span>
+                    <span class="daily-day-num" id="daily-day-label">—</span>
+                </div>
+                <div class="daily-route" id="daily-route">
+                    <span style="color:var(--text-muted,#7B8FAD);font-size:0.85rem" data-i18n="lbLoading">불러오는 중…</span>
+                </div>
+                <button class="daily-start-btn" id="btn-daily-start" disabled>
+                    <span data-i18n="btnDailyStart">오늘의 챌린지 시작</span> ▶
+                </button>
+            </div>
+
             <button class="btn-start btn-start-big" id="btn-go-difficulty">
                 <span data-i18n="btnStart">게임 시작하기</span>
                 <span class="btn-start-icon">▶</span>
             </button>
 
-            <button class="btn-leaderboard-outline" id="btn-open-lb-intro">
-                <span data-i18n="btnRankingFull">🏆 랭킹 보기</span>
-            </button>
+            <div class="intro-actions">
+                <button class="btn-leaderboard-outline" id="btn-stats">
+                    <span data-i18n="btnStats">내 기록 📊</span>
+                </button>
+                <button class="btn-leaderboard-outline" id="btn-open-lb-intro">
+                    <span data-i18n="btnRankingFull">🏆 랭킹 보기</span>
+                </button>
+            </div>
         </main>
     </div>
 
@@ -301,10 +436,24 @@
                 <button class="lb-tab" data-difficulty="medium" data-i18n="tabMedium">🟡 보통</button>
                 <button class="lb-tab" data-difficulty="hard" data-i18n="tabHard">🟠 어려움</button>
                 <button class="lb-tab" data-difficulty="very_hard" data-i18n="tabVeryHard">🔴 매우 어려움</button>
+                <button class="lb-tab" data-difficulty="daily" data-i18n="tabDaily">📅 데일리</button>
             </div>
             <div id="lb-content" class="lb-content">
                 <div class="lb-empty" data-i18n="lbSelect">탭을 선택해서 랭킹을 확인하세요</div>
             </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         스탯 모달
+    ══════════════════════════════════════════ -->
+    <div class="modal-overlay" id="stats-modal" hidden>
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="statsTitle">내 게임 기록</h2>
+                <button class="modal-close" id="close-stats">✕</button>
+            </div>
+            <div id="stats-content" style="padding:16px 20px;overflow-y:auto;max-height:60vh"></div>
         </div>
     </div>
 
@@ -551,6 +700,146 @@
             }
         }
 
+        /* ── 데일리 챌린지 ──────────────────────── */
+        let _dailyData = null;
+
+        async function loadDailyChallenge(wiki) {
+            const card = document.getElementById('daily-card');
+            const routeEl = document.getElementById('daily-route');
+            const dayEl   = document.getElementById('daily-day-label');
+            const btn     = document.getElementById('btn-daily-start');
+            if (!card) return;
+            card.style.display = '';
+            try {
+                const res  = await fetch(`/api/daily?wiki=${encodeURIComponent(wiki || 'namu')}`);
+                _dailyData = await res.json();
+                if (dayEl) dayEl.textContent = t('dailyDay')(_dailyData.day);
+                if (routeEl) routeEl.innerHTML =
+                    `<span class="daily-route-start">${esc(_dailyData.start)}</span>` +
+                    `<span class="daily-route-arrow">→</span>` +
+                    `<span class="daily-route-goal">${esc(_dailyData.goal)}</span>`;
+                if (btn) btn.disabled = false;
+            } catch(_) {
+                if (routeEl) routeEl.innerHTML = '<span style="color:#7B8FAD;font-size:0.82rem">—</span>';
+            }
+        }
+
+        function startDaily() {
+            if (!_dailyData) return;
+            const gs = {
+                start: _dailyData.start, goal: _dailyData.goal,
+                startTime: Date.now(), path: [_dailyData.start],
+                hops: 0, active: true,
+                difficulty: 'daily', wiki: _dailyData.wiki || selectedWiki,
+                dayNum: _dailyData.day,
+            };
+            localStorage.setItem('namuSpeedrun', JSON.stringify(gs));
+            showLoadingOverlay(t('loadingPreparing')(_dailyData.start));
+            window.location.href = `/page/${encodeURIComponent(_dailyData.start)}?goal=${encodeURIComponent(_dailyData.goal)}&wiki=${encodeURIComponent(_dailyData.wiki || selectedWiki)}`;
+        }
+
+        /* ── 개인 스탯 모달 ─────────────────────── */
+        const STATS_SK = 'linkyRunPersonalStats';
+
+        function openStatsModal() {
+            document.body.style.overflow = 'hidden';
+            document.getElementById('stats-modal').hidden = false;
+            renderStats();
+        }
+        function closeStatsModal() {
+            document.body.style.overflow = '';
+            document.getElementById('stats-modal').hidden = true;
+        }
+
+        function fmtMsShort(ms) {
+            if (ms === null || ms === undefined) return '—';
+            return fmtMs(ms);
+        }
+
+        function renderStats() {
+            const el = document.getElementById('stats-content');
+            let stats;
+            try { stats = JSON.parse(localStorage.getItem(STATS_SK) || 'null'); } catch(_) {}
+            if (!stats || stats.totalGames === 0) {
+                el.innerHTML = `<p style="text-align:center;color:var(--text-muted,#7B8FAD);padding:24px 0">${t('statsEmpty')}</p>`;
+                return;
+            }
+            const winRate = stats.totalGames > 0
+                ? Math.round((stats.wins / stats.totalGames) * 100) + '%' : '—';
+            const diffLabels = {
+                easy: t('diffEasy'), medium: t('diffMedium'),
+                hard: t('diffHard'), very_hard: t('diffVeryHard'),
+                daily: t('tabDaily'), custom: '직접 설정', unknown: '—',
+            };
+            let diffRows = '';
+            for (const [k, d] of Object.entries(stats.byDiff || {})) {
+                if (!d || d.plays === 0) continue;
+                const wr = Math.round((d.wins / d.plays) * 100) + '%';
+                diffRows += `<div class="stats-diff-row">
+                    <span class="stats-diff-name">${diffLabels[k] || k}</span>
+                    <span class="stats-diff-detail">${d.plays}전 ${d.wins}승 (${wr})<br>최단 ${fmtMsShort(d.bestTime)} · 최소 ${d.bestHops ?? '—'}${t('hopsUnit')}</span>
+                </div>`;
+            }
+            el.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsTotalGames')}</div>
+                        <div class="stats-cell-val">${stats.totalGames}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsWinRate')}</div>
+                        <div class="stats-cell-val">${winRate}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsStreak')}</div>
+                        <div class="stats-cell-val">${stats.streak || 0}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsBestStreak')}</div>
+                        <div class="stats-cell-val">${stats.bestStreak || 0}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsBestTime')}</div>
+                        <div class="stats-cell-val" style="font-size:1.1rem">${fmtMsShort(stats.bestTime)}</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-cell-label">${t('statsBestHops')}</div>
+                        <div class="stats-cell-val">${stats.bestHops !== null && stats.bestHops !== undefined ? stats.bestHops + t('hopsUnit') : '—'}</div>
+                    </div>
+                </div>
+                ${diffRows ? `<div class="stats-diff-title">${t('statsByDiff')}</div>${diffRows}` : ''}
+                <button class="stats-reset-btn" onclick="if(confirm(t('statsResetConfirm'))){localStorage.removeItem('${STATS_SK}');renderStats()}">${t('btnStatsReset')}</button>
+            `;
+        }
+
+        /* ── 챌린지 배너 ─────────────────────────── */
+        function detectChallengeBanner() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('challenge') !== '1') return;
+            const start = params.get('start');
+            const goal  = params.get('goal');
+            const wiki  = params.get('wiki') || 'namu';
+            if (!start || !goal) return;
+
+            const banner = document.getElementById('challenge-banner');
+            const titleEl = document.getElementById('challenge-banner-title');
+            const descEl  = document.getElementById('challenge-banner-desc');
+            const acceptBtn = document.getElementById('challenge-accept-btn');
+            if (!banner) return;
+
+            if (titleEl) titleEl.textContent = t('challengeBannerTitle');
+            if (descEl)  descEl.textContent  = t('challengeBannerDesc')(start, goal);
+            banner.style.display = '';
+
+            if (acceptBtn) {
+                acceptBtn.onclick = () => {
+                    launchGame(start, goal, 'custom');
+                };
+            }
+            // URL 파라미터 제거 (뒤로가기 방지)
+            window.history.replaceState({}, '', '/');
+        }
+
         /* ── 이벤트 연결 ─────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-wiki'));
@@ -588,6 +877,22 @@
             document.querySelectorAll('.lb-wiki-tab').forEach(tab => {
                 tab.addEventListener('click', () => switchLbWiki(tab.dataset.lbwiki));
             });
+
+            // 스탯 모달
+            document.getElementById('btn-stats').addEventListener('click', openStatsModal);
+            document.getElementById('close-stats').addEventListener('click', closeStatsModal);
+            document.getElementById('stats-modal').addEventListener('click', e => {
+                if (e.target.id === 'stats-modal') closeStatsModal();
+            });
+
+            // 데일리 챌린지 버튼
+            document.getElementById('btn-daily-start').addEventListener('click', startDaily);
+
+            // 챌린지 배너 감지
+            detectChallengeBanner();
+
+            // 데일리 카드 로드 (나무위키만)
+            loadDailyChallenge('namu');
         });
     </script>
 </body>

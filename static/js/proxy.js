@@ -1,12 +1,51 @@
 'use strict';
 (function () {
     const SK = 'namuSpeedrun';
+    const STATS_SK = 'linkyRunPersonalStats';
 
     function load() {
         try { return JSON.parse(localStorage.getItem(SK) || 'null'); } catch (_) { return null; }
     }
     function save(s) { localStorage.setItem(SK, JSON.stringify(s)); }
     function clear() { localStorage.removeItem(SK); }
+
+    /* ── Personal stats ───────────────────────────────────── */
+    function loadStats() {
+        try { return JSON.parse(localStorage.getItem(STATS_SK) || 'null') || _defaultStats(); }
+        catch(_) { return _defaultStats(); }
+    }
+    function saveStats(s) { localStorage.setItem(STATS_SK, JSON.stringify(s)); }
+    function _defaultStats() {
+        return { totalGames: 0, wins: 0, streak: 0, bestStreak: 0,
+                 bestTime: null, bestHops: null, byDiff: {} };
+    }
+    function _ensureDiff(stats, diff) {
+        if (!stats.byDiff[diff])
+            stats.byDiff[diff] = { plays: 0, wins: 0, bestTime: null, bestHops: null };
+    }
+    function _updateStatsOnWin(elapsed, hops, difficulty) {
+        const stats = loadStats();
+        stats.totalGames++;
+        stats.wins++;
+        stats.streak = (stats.streak || 0) + 1;
+        if (stats.streak > (stats.bestStreak || 0)) stats.bestStreak = stats.streak;
+        if (stats.bestTime === null || elapsed < stats.bestTime) stats.bestTime = elapsed;
+        if (stats.bestHops === null || hops < stats.bestHops) stats.bestHops = hops;
+        _ensureDiff(stats, difficulty);
+        const d = stats.byDiff[difficulty];
+        d.plays++; d.wins++;
+        if (d.bestTime === null || elapsed < d.bestTime) d.bestTime = elapsed;
+        if (d.bestHops === null || hops < d.bestHops) d.bestHops = hops;
+        saveStats(stats);
+    }
+    function _recordGiveUp(difficulty) {
+        const stats = loadStats();
+        stats.totalGames++;
+        stats.streak = 0;
+        _ensureDiff(stats, difficulty);
+        stats.byDiff[difficulty].plays++;
+        saveStats(stats);
+    }
 
     let gs = load();
     let raf = null;
@@ -73,6 +112,7 @@
     window.rhGiveUpGoal = function () {
         const goal = gs ? gs.goal : (typeof GOAL !== 'undefined' ? GOAL : null);
         const wiki = gs ? (gs.wiki || 'namu') : (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        if (gs && gs.active) _recordGiveUp(gs.difficulty || 'unknown');
         clear();
         if (goal) {
             window.location.href =
@@ -83,6 +123,7 @@
     };
 
     window.rhGiveUpHome = function () {
+        if (gs && gs.active) _recordGiveUp(gs.difficulty || 'unknown');
         clear();
         window.location.href = '/';
     };
@@ -96,6 +137,9 @@
         if (raf) { cancelAnimationFrame(raf); raf = null; }
         const elapsed = gs ? Date.now() - gs.startTime : 0;
         if (gs) { gs.active = false; gs.elapsed = elapsed; save(gs); }
+
+        // 개인 기록 업데이트
+        if (gs) _updateStatsOnWin(elapsed, gs.hops, gs.difficulty || 'unknown');
 
         const te = document.getElementById('rh-v-time');
         const he = document.getElementById('rh-v-hops');
@@ -111,10 +155,18 @@
                     `<span${isG ? ' class="rh-vpath-goal"' : ''}>${esc(p)}</span>`;
             }).join('');
         }
-        // custom 게임은 랭킹 등록 폼 숨김
+        // 힌트 사용 횟수 표시
+        const hintsUsed = gs ? (gs.hintsUsed || 0) : 0;
+        const hintsStat = document.getElementById('rh-v-hints-stat');
+        const hintsVal  = document.getElementById('rh-v-hints');
+        if (hintsStat && hintsUsed > 0) {
+            hintsStat.style.display = '';
+            if (hintsVal) hintsVal.textContent = hintsUsed + t('hopsUnit');
+        }
+        // custom/daily 게임은 랭킹 등록 폼 숨김
         const rankRow = document.getElementById('rh-rank-row');
         const rankTitle = document.querySelector('.rh-rank-title');
-        if (gs && gs.difficulty === 'custom') {
+        if (gs && (gs.difficulty === 'custom' || gs.difficulty === 'daily')) {
             if (rankRow) rankRow.style.display = 'none';
             if (rankTitle) rankTitle.style.display = 'none';
         }
@@ -160,9 +212,47 @@
     window.rhShare = async function () {
         if (!gs) return;
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
-        const text = t('shareText')(gs, fmt(elapsed));
+        let text;
+        if (gs.difficulty === 'daily' && gs.dayNum) {
+            text = t('dailyShareText')(gs, gs.dayNum, fmt(elapsed));
+        } else {
+            text = t('shareText')(gs, fmt(elapsed));
+        }
         if (navigator.share) { try { await navigator.share({ title: t('shareTitle'), text }); return; } catch (_) { } }
         try { await navigator.clipboard.writeText(text); alert(t('copied')); } catch (_) { alert(text); }
+    };
+
+    /* ── 친구에게 도전 ────────────────────────────────────── */
+    window.rhChallengeFriend = async function () {
+        if (!gs) return;
+        const wiki = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        const url = `${window.location.origin}/?challenge=1&start=${encodeURIComponent(gs.start)}&goal=${encodeURIComponent(gs.goal)}&wiki=${encodeURIComponent(wiki)}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            alert(t('challengeCopied'));
+        } catch (_) {
+            alert(url);
+        }
+    };
+
+    /* ── 힌트 시스템 ─────────────────────────────────────── */
+    window.rhShowHint = function () {
+        if (!gs || !gs.goal) return;
+        const used = gs.hintsUsed || 0;
+        const goal = gs.goal;
+        if (used >= 3) { alert(t('hintNoMore')); return; }
+        let msg;
+        if (used === 0) {
+            msg = t('hint1')(goal.length);
+        } else if (used === 1) {
+            msg = t('hint2')(goal[0]);
+        } else {
+            const half = Math.ceil(goal.length / 2);
+            msg = t('hint3')(goal.slice(0, half) + '—'.repeat(goal.length - half));
+        }
+        gs.hintsUsed = used + 1;
+        save(gs);
+        alert(msg);
     };
 
     // 위키 도메인 목록

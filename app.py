@@ -921,6 +921,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     <span class="rh-hud-goal" id="rh-goal">—</span>
   </div>
   <div class="rh-hud-right">
+    <button class="rh-btn rh-btn-hint" onclick="rhShowHint()" data-i18n="btnHint">힌트</button>
     <button class="rh-btn" onclick="rhTogglePath()" data-i18n="btnPath">경로</button>
     <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()" data-i18n="btnGiveUp">포기</button>
   </div>
@@ -954,6 +955,10 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
         <div class="rh-v-stat-label" data-i18n="statHops">이동 횟수</div>
         <div class="rh-v-stat-val" id="rh-v-hops">—</div>
       </div>
+      <div class="rh-v-stat" id="rh-v-hints-stat" style="display:none">
+        <div class="rh-v-stat-label" data-i18n="statHints">힌트 사용</div>
+        <div class="rh-v-stat-val" id="rh-v-hints">—</div>
+      </div>
     </div>
     <div>
       <div class="rh-v-path-label" data-i18n="pathLabel">이동 경로</div>
@@ -972,6 +977,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     <div class="rh-v-actions">
       <button class="rh-v-btn rh-v-btn-primary" onclick="rhPlayAgain()" data-i18n="btnPlayAgain">다시 하기</button>
       <button class="rh-v-btn rh-v-btn-secondary" onclick="rhShare()" data-i18n="btnShare">공유하기 📤</button>
+      <button class="rh-v-btn rh-v-btn-ghost" onclick="rhChallengeFriend()" data-i18n="btnChallenge">친구에게 도전 📨</button>
     </div>
   </div>
 </div>
@@ -1567,6 +1573,32 @@ def api_random_game():
         start = random.choice(candidates) if candidates else goal
 
     return jsonify({'start': start, 'goal': goal, 'difficulty': difficulty, 'wiki': wiki})
+
+
+@app.route('/api/daily')
+def api_daily():
+    import hashlib
+    wiki = request.args.get('wiki', 'namu')
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+    day_num = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+
+    if wiki == 'namu':
+        pool = POPULAR_PAGES
+    else:
+        wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
+        pool = [p for diff_list in wiki_pool.values() for p in diff_list]
+        if not pool:
+            pool = POPULAR_PAGES
+
+    seed_s = hashlib.sha256(f'{today}:{wiki}:start'.encode()).digest()
+    seed_g = hashlib.sha256(f'{today}:{wiki}:goal'.encode()).digest()
+    idx_s = int.from_bytes(seed_s[:4], 'big') % len(pool)
+    idx_g = int.from_bytes(seed_g[:4], 'big') % len(pool)
+    if idx_s == idx_g:
+        idx_g = (idx_g + 1) % len(pool)
+
+    return jsonify({'start': pool[idx_s], 'goal': pool[idx_g],
+                    'day': day_num, 'date': today, 'wiki': wiki})
 
 
 @app.route('/api/exists/<path:title>')
