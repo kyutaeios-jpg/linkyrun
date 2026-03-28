@@ -300,61 +300,138 @@ DIFFICULTY_THRESHOLDS = [
     (0,   'very_hard', '매우 어려움', '#d63031'),
 ]
 
+# 위키별 역링크 수 기반 난이도 임계값
+# 각 항목: (최소 역링크 수, 난이도 키)
+# very_hard 최소값을 3으로 설정 — 역링크 0~2개는 도달 자체가 거의 불가능하므로 제외
+WIKI_DIFFICULTY_THRESHOLDS = {
+    'namu': [(500, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
+    'en':   [(500, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
+    'ko':   [(200, 'easy'), (50,  'medium'), (10, 'hard'), (3, 'very_hard')],
+    'de':   [(300, 'easy'), (80,  'medium'), (15, 'hard'), (3, 'very_hard')],
+    'fr':   [(300, 'easy'), (80,  'medium'), (15, 'hard'), (3, 'very_hard')],
+    'ja':   [(400, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
+}
+# 유효한 목표 페이지의 최소 역링크 수 (이 미만이면 목표로 사용하지 않음)
+MIN_GOAL_BACKLINKS = 3
+
 # 난이도별 페이지 풀 (랜덤 게임 생성용)
 PAGES_BY_DIFFICULTY = {
     'easy': [
-        "대한민국", "서울특별시", "고양이", "개", "피자", "축구", "야구",
-        "마인크래프트", "BTS", "방탄소년단", "블랙핑크", "아이유",
-        "나폴레옹", "스티브 잡스", "일론 머스크", "셰익스피어", "아인슈타인",
-        "해리 포터", "반지의 제왕", "스타워즈", "마블 시네마틱 유니버스",
-        "인터넷", "컴퓨터", "스마트폰", "유튜브", "넷플릭스",
-        "지구", "태양", "달", "우주", "수학", "물리학", "화학",
-        "일본", "중국", "미국", "영국", "프랑스", "독일", "이탈리아", "스페인",
-        "음악", "영화", "드라마", "애니메이션", "만화",
-        "김치", "라면", "치킨", "떡볶이", "삼겹살", "초밥", "파스타", "햄버거",
+        # 국가·도시
+        "대한민국", "서울특별시", "일본", "중국", "미국", "영국", "프랑스", "독일",
+        "이탈리아", "스페인", "캐나다", "호주", "브라질", "러시아", "인도", "멕시코",
+        "뉴욕", "런던", "파리", "도쿄", "베이징", "로마", "시드니", "두바이",
+        "싱가포르", "방콕", "바르셀로나", "암스테르담", "베를린", "모스크바",
+        # K-pop·엔터
+        "BTS", "방탄소년단", "블랙핑크", "아이유", "뉴진스", "에스파", "르세라핌",
+        "아이브", "세븐틴", "스트레이 키즈", "트와이스", "엑소", "샤이니",
+        "레드벨벳", "소녀시대", "빅뱅", "2NE1", "원더걸스", "슈퍼주니어",
+        # 드라마·영화
+        "오징어 게임", "기생충", "이상한 변호사 우영우", "무빙", "더 글로리",
+        "태양의 후예", "도깨비", "사랑의 불시착", "별에서 온 그대",
+        "어벤져스", "타이타닉", "해리 포터", "반지의 제왕", "스타워즈",
+        "인터스텔라", "조커", "라라랜드", "보헤미안 랩소디",
+        # 음악
+        "비틀즈", "마이클 잭슨", "퀸", "에미넴", "테일러 스위프트", "에드 시런",
+        "아리아나 그란데", "저스틴 비버", "레이디 가가", "드레이크",
+        # 스포츠
+        "축구", "야구", "농구", "테니스", "수영", "올림픽", "월드컵", "NBA", "EPL",
+        "손흥민", "류현진", "김연아", "박지성", "이강인", "황희찬",
+        "호날두", "메시", "르브론 제임스", "마이클 조던", "타이거 우즈",
+        # 음식
+        "김치", "라면", "치킨", "떡볶이", "삼겹살", "비빔밥", "순두부찌개",
+        "초밥", "파스타", "피자", "햄버거", "타코", "카레", "짜장면", "족발",
+        # 게임·애니
+        "마인크래프트", "포켓몬스터", "슈퍼마리오", "젤다의 전설", "GTA",
+        "리그 오브 레전드", "오버워치", "배틀그라운드", "발로란트", "로블록스",
+        "원피스", "나루토", "드래곤볼", "귀멸의 칼날", "진격의 거인",
+        "슬램덩크", "강철의 연금술사", "도라에몽", "짱구는 못말려",
+        # 과학·기술
+        "인터넷", "컴퓨터", "스마트폰", "유튜브", "넷플릭스", "인스타그램",
+        "인공지능", "기후변화", "블록체인", "가상현실", "메타버스",
+        "지구", "태양", "달", "우주", "블랙홀", "수학", "물리학", "화학",
+        "삼성전자", "애플", "구글", "메타", "아마존", "마이크로소프트",
+        "테슬라", "SpaceX", "나사",
+        # 역사·인물
         "조선", "고려", "로마 제국", "제2차 세계 대전", "한국전쟁",
-        "비틀즈", "마이클 잭슨", "올림픽", "월드컵", "NBA", "EPL",
-        "농구", "테니스", "수영", "포켓몬스터", "슈퍼마리오",
-        "삼성전자", "애플", "구글", "메타", "아마존",
-        "공룡", "호랑이", "사자", "코끼리", "판다", "돌고래", "상어",
-        "피카소", "반 고흐", "레오나르도 다 빈치", "미켈란젤로",
-        "뉴욕", "런던", "파리", "도쿄", "베이징", "로마",
-        "기후변화", "인공지능", "블록체인", "가상현실",
-        "불교", "기독교", "이슬람교", "힌두교",
-        "손흥민", "류현진", "김연아", "박지성",
-        "오징어 게임", "기생충", "어벤져스", "타이타닉",
-        "원피스", "나루토", "드래곤볼", "귀멸의 칼날",
-        "리그 오브 레전드", "오버워치", "배틀그라운드",
-        "테슬라", "SpaceX", "나사", "ISS",
-        "히말라야", "에베레스트", "태평양", "대서양",
+        "나폴레옹", "스티브 잡스", "일론 머스크", "셰익스피어", "아인슈타인",
+        "레오나르도 다 빈치", "피카소", "미켈란젤로", "반 고흐",
+        # 동물·자연
+        "고양이", "개", "공룡", "호랑이", "사자", "코끼리", "판다", "돌고래",
+        "상어", "펭귄", "독수리", "나비", "히말라야", "에베레스트", "태평양",
+        # 기타
+        "불교", "기독교", "이슬람교", "힌두교", "유교",
+        "민주주의", "자본주의", "공산주의",
+        "소주", "커피", "초콜릿", "아이스크림",
     ],
     'medium': [
+        # 한국 지역·도시
         "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시",
+        "울산광역시", "수원시", "고양시", "창원시", "성남시", "청주시",
+        "전주시", "제주특별자치도", "강릉시", "경주시", "안동시",
+        # 한국 역사 인물
         "세종대왕", "이순신", "광개토대왕", "장보고", "원효", "의상",
+        "김유신", "을지문덕", "강감찬", "권율", "신사임당", "유관순",
+        "김구", "안창호", "안중근", "윤봉길", "박정희", "김대중",
+        # 한국 역사 사건
         "임진왜란", "병자호란", "동학농민운동", "3.1운동", "4.19혁명",
-        "태권도", "씨름", "바둑", "장기", "유도",
-        "원자력 발전", "로봇공학", "양자 컴퓨터", "나노기술", "생명공학",
-        "모차르트", "베토벤", "바흐", "쇼팽", "드뷔시", "차이콥스키",
-        "다윈", "뉴턴", "갈릴레오 갈릴레이", "니콜라 테슬라", "마리 퀴리",
-        "진화론", "빅뱅", "블랙홀", "화성", "목성", "토성", "명왕성",
-        "생물학", "심리학", "경제학", "철학", "사회학", "인류학",
-        "페이스북", "트위터", "인스타그램", "카카오", "네이버",
-        "비빔밥", "냉면", "삼계탕", "갈비", "잡채", "된장찌개", "순두부찌개",
-        "고대 이집트", "그리스 신화", "북유럽 신화", "로마 신화", "메소포타미아",
+        "한국전쟁", "6.25전쟁", "5.18민주화운동", "IMF 경제위기",
+        "조선 건국", "고려 건국", "삼국통일", "임진왜란", "일제강점기",
+        # 한국 스포츠·문화
+        "태권도", "씨름", "바둑", "장기", "유도", "탁구", "양궁",
+        "판소리", "사물놀이", "한복", "한옥", "한글", "태극기",
+        "설날", "추석", "단오", "한식",
+        # 세계 역사
         "프랑스 혁명", "산업혁명", "냉전", "베트남 전쟁", "걸프 전쟁",
-        "반도체", "광섬유", "GPS", "인터넷 프로토콜",
-        "태풍", "지진", "화산", "쓰나미", "오로라",
-        "서울대학교", "연세대학교", "고려대학교", "카이스트",
-        "소주", "막걸리", "와인", "위스키", "맥주",
-        "뮤지컬", "오페라", "발레", "클래식 음악", "재즈",
-        "스페인", "포르투갈", "네덜란드", "벨기에", "스위스", "오스트리아",
-        "캐나다", "호주", "브라질", "아르헨티나", "멕시코", "인도",
-        "사하라 사막", "아마존 열대우림", "시베리아", "남극",
-        "DNA", "RNA", "단백질", "세포", "바이러스", "박테리아",
+        "제1차 세계 대전", "십자군 전쟁", "몽골 제국", "대항해시대",
+        "미국 독립", "남북전쟁", "식민지배", "아프리카 분할",
+        "고대 이집트", "그리스 신화", "북유럽 신화", "로마 신화",
+        "메소포타미아", "페르시아 제국", "그리스 문명",
+        # 과학
+        "진화론", "빅뱅", "화성", "목성", "토성", "명왕성", "혜성",
+        "DNA", "RNA", "단백질", "세포", "바이러스", "박테리아", "항생제",
+        "원자력 발전", "태양광", "풍력", "수소에너지",
+        "반도체", "GPS", "인터넷 프로토콜", "광섬유", "양자 컴퓨터",
+        "로봇공학", "나노기술", "생명공학", "유전자 편집",
+        # 음악·예술
+        "모차르트", "베토벤", "바흐", "쇼팽", "드뷔시", "차이콥스키",
+        "헨델", "비발디", "슈베르트", "브람스", "말러", "라흐마니노프",
+        "모네", "렘브란트", "달리", "앤디 워홀", "뭉크", "클림트",
+        "뮤지컬", "오페라", "발레", "클래식 음악", "재즈", "록음악",
+        # 인물
+        "다윈", "뉴턴", "마리 퀴리", "스티븐 호킹", "리처드 파인만",
+        "프로이트", "아들러", "융", "파블로프", "스키너",
+        "마르크스", "에라스무스", "괴테", "톨스토이", "도스토예프스키",
+        "헤밍웨이", "카프카", "조지 오웰", "버지니아 울프",
+        # 학문
+        "생물학", "심리학", "경제학", "철학", "사회학", "인류학",
+        "지리학", "정치학", "법학", "의학", "천문학", "지질학",
+        "언어학", "고고학", "역사학", "미술사학",
+        # 세계 지리
+        "사하라 사막", "아마존 열대우림", "시베리아", "남극", "북극",
+        "아마존강", "나일강", "양쯔강", "갠지스강", "미시시피강",
+        "알프스산맥", "안데스산맥", "로키산맥", "우랄산맥",
+        "지중해", "카리브해", "홍해", "흑해", "카스피해",
+        "네덜란드", "벨기에", "스위스", "오스트리아", "폴란드",
+        "체코", "헝가리", "그리스", "터키", "이란", "이라크", "사우디아라비아",
+        "이집트", "남아프리카공화국", "나이지리아", "에티오피아",
+        "아르헨티나", "칠레", "페루", "콜롬비아", "베네수엘라",
+        # 음식·음료
+        "냉면", "삼계탕", "갈비", "잡채", "된장찌개", "삼겹살",
+        "떡국", "갈비탕", "청국장", "막걸리", "와인", "위스키",
+        "초밥", "라멘", "우동", "덴푸라", "야키토리",
+        # 경제·사회
         "주식", "채권", "암호화폐", "비트코인", "이더리움",
-        "고흐", "모네", "렘브란트", "달리", "앤디 워홀",
-        "셰익스피어", "괴테", "톨스토이", "도스토예프스키", "헤밍웨이",
-        "아이작 뉴턴", "스티븐 호킹", "리처드 파인만",
+        "GDP", "인플레이션", "금리", "환율", "무역", "세계무역기구",
+        "유럽연합", "ASEAN", "G7", "G20", "유엔",
+        "카카오", "네이버", "삼성", "현대자동차", "SK", "LG",
+        # 자연현상
+        "태풍", "지진", "화산", "쓰나미", "오로라", "번개",
+        "빙하", "사막", "열대우림", "산호초", "맹그로브",
+        # 대학·교육
+        "서울대학교", "연세대학교", "고려대학교", "카이스트", "포스텍",
+        "하버드대학교", "MIT", "옥스퍼드대학교", "케임브리지대학교",
+        "도쿄대학교", "베이징대학교", "칭화대학교",
     ],
     'hard': [
         "경복궁", "창덕궁", "수원화성", "불국사", "석굴암", "해인사",
@@ -1151,24 +1228,68 @@ def get_raw_content(title):
 
 
 def get_backlink_count(title: str):
-    """나무위키 역링크 수 반환. 실패하면 None."""
-    if cf_requests is None:
-        return None
-    url = f'https://namu.wiki/backlink/{quote(title)}'
+    """나무위키 역링크 수 반환. Worker API 경유. 실패하면 None."""
+    import urllib.request as _ureq, urllib.parse as _uparse
     try:
-        resp = _fetch(url, timeout=8)
-        if resp.status_code != 200:
-            return None
-        text = resp.text
-        if 'Just a moment' in text or 'cf-challenge' in text:
-            return None
+        params = _uparse.urlencode({'token': WORKER_TOKEN, 'type': 'backlink', 'title': title})
+        req = _ureq.Request(WORKER_URL + '?' + params, headers={'User-Agent': 'LinkyRun/1.0'})
+        with _ureq.urlopen(req, timeout=10) as r:
+            text = r.read().decode('utf-8', errors='replace')
+        # namu.wiki backlink API JSON: {"totalCount": N, ...}
         m = re.search(r'"totalCount"\s*:\s*(\d+)', text)
         if m:
             return int(m.group(1))
+        # 폴백: HTML 파싱
         items = len(re.findall(r'<a [^>]*href="/w/', text))
-        return items if items > 0 else None
-    except Exception:
+        return items if items > 0 else 0
+    except Exception as e:
+        print(f'[backlink:{title}] 에러: {e}', flush=True)
         return None
+
+
+def get_wikipedia_backlink_count(title: str, lang: str):
+    """Wikipedia MediaWiki API로 역링크 수 반환. 실패 시 None."""
+    import urllib.request as _ureq, urllib.parse as _uparse
+    try:
+        params = _uparse.urlencode({
+            'action': 'query',
+            'list': 'backlinks',
+            'bltitle': title,
+            'bllimit': '500',
+            'format': 'json',
+        })
+        url = f'https://{lang}.wikipedia.org/w/api.php?{params}'
+        req = _ureq.Request(url, headers={'User-Agent': 'LinkyRun/1.0 (speedrun game)'})
+        with _ureq.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read().decode())
+        bls = data.get('query', {}).get('backlinks', [])
+        # continue 키가 있으면 500개 초과
+        if 'continue' in data:
+            return 500
+        return len(bls)
+    except Exception as e:
+        print(f'[wp-backlink:{lang}/{title}] 에러: {e}', flush=True)
+        return None
+
+
+def get_backlink_count_for_wiki(title: str, wiki: str):
+    """위키에 따라 적합한 역링크 수 조회 함수를 호출."""
+    if wiki == 'namu':
+        return get_backlink_count(title)
+    else:
+        return get_wikipedia_backlink_count(title, wiki)
+
+
+def classify_difficulty_for_wiki(count, wiki: str):
+    """위키별 임계값으로 역링크 수를 난이도로 분류. (key, label, color) 반환."""
+    thresholds = WIKI_DIFFICULTY_THRESHOLDS.get(wiki, WIKI_DIFFICULTY_THRESHOLDS['namu'])
+    if count is not None:
+        for threshold, key in thresholds:
+            if count >= threshold:
+                for t, k, label, color in DIFFICULTY_THRESHOLDS:
+                    if k == key:
+                        return key, label, color
+    return 'medium', '보통', '#fdcb6e'
 
 
 def classify_difficulty(count, title: str):
@@ -1345,21 +1466,36 @@ def _fetch_random_wiki_title(wiki: str):
 
 @app.route('/api/random-game')
 def api_random_game():
-    """랜덤 시작(위키 random URL) + 난이도별 목표 페이지 반환."""
+    """랜덤 시작 + 역링크 수 기반 난이도별 목표 페이지 반환."""
     difficulty = request.args.get('difficulty', 'easy')
     wiki       = request.args.get('wiki', 'namu')
 
-    # 목표 페이지: 난이도별 풀에서 선택
-    if wiki == 'namu':
-        goal_pool = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
-    else:
-        wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
-        goal_pool = wiki_pool.get(difficulty, wiki_pool.get('easy', []))
+    # 목표 페이지: 랜덤 페이지를 뽑아 역링크 수가 난이도에 맞는지 확인 (최대 8회 시도)
+    goal = None
+    for _ in range(8):
+        t = _fetch_random_wiki_title(wiki)
+        if not t:
+            continue
+        count = get_backlink_count_for_wiki(t, wiki)
+        # 역링크가 너무 적으면 도달 불가 — 제외
+        if count is not None and count < MIN_GOAL_BACKLINKS:
+            continue
+        key, _, _ = classify_difficulty_for_wiki(count, wiki)
+        if key == difficulty:
+            goal = t
+            break
 
-    if not goal_pool:
-        return jsonify({'error': 'not enough pages'}), 500
+    # 랜덤 시도 실패 시 기존 정적 풀로 폴백
+    if not goal:
+        if wiki == 'namu':
+            fallback = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
+        else:
+            wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
+            fallback = wiki_pool.get(difficulty, wiki_pool.get('easy', []))
+        goal = random.choice(fallback) if fallback else None
 
-    goal = random.choice(goal_pool)
+    if not goal:
+        return jsonify({'error': 'goal page not found'}), 500
 
     # 시작 페이지: 위키 랜덤 URL (최대 3회 시도)
     start = None
@@ -1369,10 +1505,15 @@ def api_random_game():
             start = t
             break
 
-    # 실패 시 풀에서 폴백
+    # 실패 시 정적 풀에서 폴백
     if not start:
-        fallback_pool = [p for p in goal_pool if p != goal]
-        start = random.choice(fallback_pool) if fallback_pool else goal_pool[0]
+        if wiki == 'namu':
+            pool = PAGES_BY_DIFFICULTY.get(difficulty, PAGES_BY_DIFFICULTY['easy'])
+        else:
+            wiki_pool = WIKI_PAGES_BY_DIFFICULTY.get(wiki, {})
+            pool = wiki_pool.get(difficulty, wiki_pool.get('easy', []))
+        candidates = [p for p in pool if p != goal]
+        start = random.choice(candidates) if candidates else goal
 
     return jsonify({'start': start, 'goal': goal, 'difficulty': difficulty, 'wiki': wiki})
 
@@ -1386,10 +1527,12 @@ def api_exists(title):
 @app.route('/api/difficulty/<path:title>')
 def api_difficulty(title):
     title = unquote(title)
-    count = get_backlink_count(title)
-    key, label, color = classify_difficulty(count, title)
+    wiki = request.args.get('wiki', 'namu')
+    count = get_backlink_count_for_wiki(title, wiki)
+    key, label, color = classify_difficulty_for_wiki(count, wiki)
     return jsonify({
         'title': title,
+        'wiki': wiki,
         'backlinks': count,
         'difficulty': key,
         'label': label,

@@ -1,0 +1,91 @@
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    const token = url.searchParams.get('token');
+    if (token !== env.SECRET_TOKEN) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const type = url.searchParams.get('type');
+
+    // 랜덤 페이지 제목만 반환 (body 없음)
+    if (type === 'random') {
+      try {
+        const response = await fetch('https://namu.wiki/random', {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+            'Accept-Language': 'ko-KR,ko;q=0.9',
+          },
+          redirect: 'follow',
+        });
+        return new Response('', {
+          headers: {
+            'X-Namu-Url': response.url,
+            'X-Namu-Status': String(response.status),
+          },
+        });
+      } catch (e) {
+        return new Response(`Error: ${e.message}`, { status: 502 });
+      }
+    }
+
+    // 역링크 수 조회 (나무위키 backlink API)
+    if (type === 'backlink') {
+      const title = url.searchParams.get('title');
+      if (!title) return new Response('Missing title', { status: 400 });
+      try {
+        const blUrl = `https://namu.wiki/backlink/${encodeURIComponent(title)}`;
+        const response = await fetch(blUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+            'Accept': 'application/json',
+            'Accept-Language': 'ko-KR,ko;q=0.9',
+            'Referer': 'https://namu.wiki/',
+          },
+          redirect: 'follow',
+        });
+        const text = await response.text();
+        return new Response(text, {
+          status: response.status,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      } catch (e) {
+        return new Response(`Error: ${e.message}`, { status: 502 });
+      }
+    }
+
+    // 일반 페이지 fetch
+    const title = url.searchParams.get('title');
+    if (!title) {
+      return new Response('Missing title', { status: 400 });
+    }
+
+    const namuUrl = `https://namu.wiki/w/${encodeURIComponent(title)}`;
+
+    try {
+      const response = await fetch(namuUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.9',
+          'Referer': 'https://namu.wiki/',
+        },
+        redirect: 'follow',
+      });
+
+      const html = await response.text();
+
+      return new Response(html, {
+        status: response.status,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'X-Namu-Status': String(response.status),
+          'X-Namu-Url': response.url,
+        },
+      });
+    } catch (e) {
+      return new Response(`Fetch error: ${e.message}`, { status: 502 });
+    }
+  },
+};
