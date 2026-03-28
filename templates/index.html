@@ -467,6 +467,7 @@
         let activeLbWiki = 'namu';
 
         function openLeaderboard(difficulty) {
+            document.body.style.overflow = 'hidden';
             activeLbWiki = selectedWiki;
             document.querySelectorAll('.lb-wiki-tab').forEach(t => {
                 t.classList.toggle('lb-wiki-tab-active', t.dataset.lbwiki === activeLbWiki);
@@ -475,6 +476,7 @@
             switchLbTab(difficulty ?? activeLbDifficulty);
         }
         function closeLeaderboard() {
+            document.body.style.overflow = '';
             document.getElementById('leaderboard-modal').hidden = true;
         }
         function switchLbWiki(wiki) {
