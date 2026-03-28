@@ -77,12 +77,14 @@
         }
         .lb-wiki-tabs::-webkit-scrollbar { display: none; }
         .lb-wiki-tab {
-            flex-shrink: 0; padding: 8px 14px;
+            flex-shrink: 0; padding: 8px 14px; min-height: 38px;
             border-radius: 8px; border: 1px solid var(--border, #1E2D45);
             background: none; color: var(--text-muted, #7B8FAD);
             font-size: 0.78rem; font-weight: 600; cursor: pointer;
             font-family: inherit; white-space: nowrap;
+            display: inline-flex; align-items: center;
             transition: background .15s, color .15s, border-color .15s;
+            box-sizing: border-box;
         }
         .lb-wiki-tab:hover { border-color: var(--accent, #FF6B35); color: var(--text, #F0F4FF); }
         .lb-wiki-tab-active {
