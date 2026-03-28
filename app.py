@@ -1742,23 +1742,44 @@ def _hop_hint(count) -> str:
         return f'이 문서로 연결된 링크가 {count}개뿐입니다. 도달하기 매우 어려운 문서입니다. 관련 상위 개념 문서를 찾아보세요.'
 
 
-def _extract_hint_links(html: str, max_links: int = 6) -> list:
-    """프록시 HTML에서 /page/ 링크 제목 추출 — namu.wiki 힌트 2용."""
+def _extract_namu_category_from_html(html: str) -> str:
+    """Worker로 받은 namu.wiki HTML에서 분류 링크 추출."""
     from bs4 import BeautifulSoup
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+        cats = []
+        for a in soup.find_all('a', href=True):
+            decoded = urllib.parse.unquote(a['href'])
+            if decoded.startswith('/w/분류:') or decoded.startswith('/w/Category:'):
+                cat = decoded.split('/w/분류:', 1)[-1].split('/w/Category:', 1)[-1]
+                cat = cat.split('#')[0].split('?')[0].strip()
+                if cat and cat not in cats:
+                    cats.append(cat)
+        return ' / '.join(cats[:3]) if cats else ''
+    except Exception:
+        return ''
+
+
+def _extract_hint_links(html: str, max_links: int = 6) -> list:
+    """namu.wiki HTML(/w/ 링크)에서 본문 링크 제목 추출 — 힌트 2용."""
+    from bs4 import BeautifulSoup
+    _META_PREFIXES = ('분류:', '파일:', '틀:', '위키백과:', 'Category:', 'File:', 'Template:', '나무위키:', '특수기능:')
     try:
         soup = BeautifulSoup(html, 'html.parser')
         seen = set()
         links = []
         for a in soup.find_all('a', href=True):
             href = a['href']
-            if not href.startswith('/page/'):
+            title = None
+            if href.startswith('/w/'):
+                title = urllib.parse.unquote(href[3:]).split('?')[0].split('#')[0]
+            elif href.startswith('/page/'):
+                m = re.match(r'^/page/([^?#]+)', href)
+                if m:
+                    title = urllib.parse.unquote(m.group(1))
+            if not title:
                 continue
-            m = re.match(r'^/page/([^?#]+)', href)
-            if not m:
-                continue
-            title = urllib.parse.unquote(m.group(1))
-            # 분류, 파일, 틀 등 메타 문서 제외
-            if any(title.startswith(p) for p in ('분류:', '파일:', '틀:', '위키백과:', 'Category:', 'File:', 'Template:')):
+            if any(title.startswith(p) for p in _META_PREFIXES):
                 continue
             if title not in seen:
                 seen.add(title)
@@ -1782,13 +1803,14 @@ def api_hint():
         # 카테고리 힌트
         cat = PAGE_CATEGORIES.get(title)
         if not cat and wiki == 'namu':
-            content = get_raw_content(title)
-            if content:
-                cat = _extract_namu_category(content)
+            # get_raw_content 대신 Worker HTML에서 분류 링크 파싱 (CF /raw/ 차단 우회)
+            html = get_page_html(title, wiki)
+            if html:
+                cat = _extract_namu_category_from_html(html)
         if not cat and wiki != 'namu':
             summ = _get_wp_summary(title, wiki)
             cat = summ
-        hint = f'"{cat}" 에 해당하는 문서입니다.' if cat else '카테고리 정보를 가져올 수 없습니다.'
+        hint = f'"{cat}" 카테고리에 해당하는 문서입니다.' if cat else '카테고리 정보를 불러올 수 없습니다.'
 
     elif n == 2:
         # 연관 링크 힌트 (namu) / 첫 문장 힌트 (wikipedia)

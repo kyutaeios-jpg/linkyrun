@@ -96,7 +96,6 @@ kbd {
     padding: calc(16px + env(safe-area-inset-top)) 16px 14px;
     text-align: center;
     position: relative;
-    overflow: clip; /* hidden 대신 clip — 절대위치 자식(드롭다운)은 차단하지 않음 */
     flex-shrink: 0;
 }
 
