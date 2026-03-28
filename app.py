@@ -823,8 +823,12 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 #app,#app>div:first-child,#app>div:first-child>div:first-child{
     padding-top:0!important;margin-top:0!important
 }
-/* JS가 제거된 환경에서 라이트 모드 색상 기본값 보장 */
-html{color-scheme:light}
+/* 다크모드: 위키 표 인라인 배경색(라이트모드 하드코딩) override */
+@media(prefers-color-scheme:dark){
+    td,th{background-color:#1e1e24!important;color:inherit}
+    tr{background-color:transparent!important}
+    table{border-color:#3a3a42!important}
+}
 </style>'''
         html = html.replace('</head>', namu_fix + '</head>', 1)
     elif wiki != 'namu' and '</head>' in html:
