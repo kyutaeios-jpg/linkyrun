@@ -183,6 +183,7 @@ body {
     flex: 1; padding: 12px; border-radius: 10px;
     font-weight: 700; cursor: pointer; font-family: inherit;
     font-size: 14px; border: none; transition: opacity 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rh-v-btn:active { opacity: 0.75; }
 .rh-v-btn-primary {
