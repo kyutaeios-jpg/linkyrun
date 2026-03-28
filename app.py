@@ -1449,6 +1449,9 @@ def _fetch_random_wiki_title(wiki: str):
                 prefix = 'https://namu.wiki/w/'
                 if final_url.startswith(prefix):
                     title = unquote(final_url[len(prefix):].split('?')[0].split('#')[0])
+                    # 하위 문서(예: '이스핀 샤를/작중 행적') → 상위 문서로 대체
+                    if '/' in title:
+                        title = title.split('/')[0].strip()
                     if title and not any(title.startswith(p) for p in EXCLUDED_PREFIXES):
                         return title
         else:
@@ -1464,7 +1467,8 @@ def _fetch_random_wiki_title(wiki: str):
                 prefix = cfg.get('base_url', '')
                 if prefix and final_url.startswith(prefix):
                     title = unquote(final_url[len(prefix):].split('?')[0].split('#')[0])
-                    if title:
+                    # Wikipedia 하위 문서(/ 포함)는 건너뜀
+                    if title and '/' not in title:
                         return title
     except Exception as e:
         print(f'[random-title:{wiki}] 에러: {e}', flush=True)
