@@ -70,6 +70,26 @@
         .wiki-card-flag { font-size: 2rem; line-height: 1; }
         .wiki-card-name { font-size: 0.92rem; font-weight: 700; }
         .wiki-card-desc { font-size: 0.75rem; color: var(--text-muted, #7B8FAD); }
+        /* 랭킹 모달 위키 탭 */
+        .lb-wiki-tabs {
+            display: flex; gap: 4px; padding: 10px 16px 0;
+            overflow-x: auto; -webkit-overflow-scrolling: touch;
+        }
+        .lb-wiki-tabs::-webkit-scrollbar { display: none; }
+        .lb-wiki-tab {
+            flex-shrink: 0; padding: 5px 10px;
+            border-radius: 8px; border: 1px solid var(--border, #1E2D45);
+            background: none; color: var(--text-muted, #7B8FAD);
+            font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; white-space: nowrap;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .lb-wiki-tab:hover { border-color: var(--accent, #FF6B35); color: var(--text, #F0F4FF); }
+        .lb-wiki-tab-active {
+            background: rgba(255,107,53,0.12);
+            border-color: var(--accent, #FF6B35);
+            color: var(--accent, #FF6B35);
+        }
         /* 선택된 위키 배지 */
         .wiki-badge {
             font-size: 0.75rem; font-weight: 600;
@@ -268,6 +288,14 @@
                 <h2 class="modal-title" data-i18n="modalRankingTitle">🏆 랭킹</h2>
                 <button class="modal-close" id="close-leaderboard">✕</button>
             </div>
+            <div class="lb-wiki-tabs" id="lb-wiki-tabs">
+                <button class="lb-wiki-tab lb-wiki-tab-active" data-lbwiki="namu">🌲 나무</button>
+                <button class="lb-wiki-tab" data-lbwiki="ko">🇰🇷 위키</button>
+                <button class="lb-wiki-tab" data-lbwiki="en">🇺🇸 EN</button>
+                <button class="lb-wiki-tab" data-lbwiki="de">🇩🇪 DE</button>
+                <button class="lb-wiki-tab" data-lbwiki="fr">🇫🇷 FR</button>
+                <button class="lb-wiki-tab" data-lbwiki="ja">🇯🇵 JA</button>
+            </div>
             <div class="lb-tabs">
                 <button class="lb-tab lb-tab-active" data-difficulty="easy" data-i18n="tabEasy">🟢 쉬움</button>
                 <button class="lb-tab" data-difficulty="medium" data-i18n="tabMedium">🟡 보통</button>
@@ -416,13 +444,25 @@
 
         /* ── 랭킹 모달 ──────────────────────────── */
         let activeLbDifficulty = 'easy';
+        let activeLbWiki = 'namu';
 
         function openLeaderboard(difficulty) {
+            activeLbWiki = selectedWiki;
+            document.querySelectorAll('.lb-wiki-tab').forEach(t => {
+                t.classList.toggle('lb-wiki-tab-active', t.dataset.lbwiki === activeLbWiki);
+            });
             document.getElementById('leaderboard-modal').hidden = false;
             switchLbTab(difficulty ?? activeLbDifficulty);
         }
         function closeLeaderboard() {
             document.getElementById('leaderboard-modal').hidden = true;
+        }
+        function switchLbWiki(wiki) {
+            activeLbWiki = wiki;
+            document.querySelectorAll('.lb-wiki-tab').forEach(t => {
+                t.classList.toggle('lb-wiki-tab-active', t.dataset.lbwiki === wiki);
+            });
+            loadRanking(activeLbDifficulty);
         }
         function switchLbTab(difficulty) {
             activeLbDifficulty = difficulty || 'easy';
@@ -459,7 +499,7 @@
             const el = document.getElementById('lb-content');
             el.innerHTML = `<div class="lb-loading">${t('lbLoading')}</div>`;
             try {
-                let url = `/api/ranking?wiki=${encodeURIComponent(selectedWiki)}&limit=20`;
+                let url = `/api/ranking?wiki=${encodeURIComponent(activeLbWiki)}&limit=20`;
                 if (difficulty) url += `&difficulty=${encodeURIComponent(difficulty)}`;
                 const data = await fetch(url).then(r => r.json());
                 if (!data.rankings?.length) {
@@ -522,6 +562,9 @@
             });
             document.querySelectorAll('.lb-tab').forEach(tab => {
                 tab.addEventListener('click', () => switchLbTab(tab.dataset.difficulty));
+            });
+            document.querySelectorAll('.lb-wiki-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchLbWiki(tab.dataset.lbwiki));
             });
         });
     </script>
