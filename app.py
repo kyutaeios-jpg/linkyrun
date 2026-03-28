@@ -813,15 +813,6 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     wiki_enc = quote(wiki, safe='')
     is_goal  = bool(goal) and title.strip() == goal.strip()
 
-    # 0. [DEBUG] 스크립트 제거 전 원본에서 namu.la 등장 여부 확인
-    if wiki == 'namu':
-        _raw_samples = re.findall(r'.{0,30}namu\.la.{0,60}', wiki_html)
-        if _raw_samples:
-            for s in _raw_samples[:3]:
-                print(f'[build_proxy_raw] namu.la in raw: {s!r}', flush=True)
-        else:
-            print(f'[build_proxy_raw] namu.la NOT found in raw HTML either', flush=True)
-
     # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
 
@@ -885,60 +876,17 @@ html{color-scheme:light}
         rewrite_link, html
     )
 
-    # 4-a. 나무위키 CDN 이미지 URL → Flask 이미지 프록시 (핫링크 차단 우회)
-    if wiki == 'namu':
-        def _proxy_img(raw: str) -> str:
-            if raw.startswith('//'):
-                raw = 'https:' + raw
-            return f"/img-proxy?url={quote(raw, safe='')}"
+    # 4-a. 나무위키 이미지: SSR HTML에 실제 CDN URL이 없음 (Vue 런타임 로딩)
+    # → 현재 구조에서는 이미지 프록시 불가. 스킵.
 
-        # src / data-src 속성의 namu CDN URL 교체
-        _img_count = [0]
-        def _rewrite_img(m):
-            _img_count[0] += 1
-            return m.group(1) + _proxy_img(m.group(2)) + '"'
-        html = re.sub(
-            r'((?:src|data-src)=")((https?:)?//[a-z0-9\-]+\.namu\.la/[^"]*)"',
-            _rewrite_img,
-            html,
-        )
-        print(f'[build_proxy] {title}: img 교체 {_img_count[0]}개', flush=True)
-        if _img_count[0] == 0:
-            import re as _re2
-            # <img 태그 전체 샘플 (src 형태 확인)
-            img_tags = _re2.findall(r'<img[^>]{0,200}>', html)
-            for t in img_tags[:3]:
-                print(f'[build_proxy] img tag: {t!r}', flush=True)
-            # figure/picture 태그 샘플
-            fig_tags = _re2.findall(r'<(?:figure|picture|source)[^>]{0,200}>', html)
-            for t in fig_tags[:3]:
-                print(f'[build_proxy] media tag: {t!r}', flush=True)
-            # namu.la 포함 여부 (다른 속성도 포함)
-            samples = _re2.findall(r'.{0,30}namu\.la.{0,50}', html)
-            for s in samples[:3]:
-                print(f'[build_proxy] namu.la ctx: {s!r}', flush=True)
-            # __NUXT__ 또는 JSON 상태 여부
-            if '__NUXT__' in html or 'window.__' in html:
-                print(f'[build_proxy] NUXT state found in HTML', flush=True)
-        # srcset 속성 내 각 URL 교체
-        def _rewrite_srcset(m):
-            def _px(sm):
-                return _proxy_img(sm.group(0))
-            new_val = re.sub(r'(https?:)?//[a-z0-9\-]+\.namu\.la/\S+', _px, m.group(1))
-            return f'srcset="{new_val}"'
-        html = re.sub(
-            r'srcset="([^"]*(?:https?:)?//[a-z0-9\-]+\.namu\.la/[^"]*)"',
-            _rewrite_srcset, html,
-        )
-
-    # 4-b. 나머지 상대 URL → 절대 URL (/page/, /img-proxy 제외)
+    # 4-b. 나머지 상대 URL → 절대 URL (/page/ 제외)
     html = re.sub(
-        r'(href|src)="(\/(?!\/|page\/|img-proxy)[^"]*)"',
+        r'(href|src)="(\/(?!\/|page\/)[^"]*)"',
         lambda m: f'{m.group(1)}="https://{host}{m.group(2)}"',
         html,
     )
     html = re.sub(
-        r"(href|src)='(\/(?!\/|page\/|img-proxy)[^']*)'",
+        r"(href|src)='(\/(?!\/|page\/)[^']*)'",
         lambda m: f"{m.group(1)}='https://{host}{m.group(2)}'",
         html,
     )
@@ -1708,49 +1656,6 @@ def api_ranking():
     ]
     return jsonify({'rankings': results, 'difficulty': difficulty, 'wiki': wiki_filter})
 
-
-@app.route('/img-proxy')
-def img_proxy():
-    """나무위키 CDN 이미지 프록시 (핫링크 차단 우회)."""
-    import urllib.parse as _uparse
-    from flask import Response as _Response
-    img_url = request.args.get('url', '')
-    if not img_url:
-        return ('Missing url', 400)
-    try:
-        parsed = _uparse.urlparse(img_url)
-    except Exception:
-        return ('Invalid url', 400)
-    hostname = parsed.hostname or ''
-    if not (hostname.endswith('.namu.la') or hostname == 'namu.la'):
-        return ('Forbidden', 403)
-
-    _headers = {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-        'Accept-Language': 'ko-KR,ko;q=0.9',
-        'Referer': 'https://namu.wiki/',
-    }
-    try:
-        if cf_requests is None:
-            return ('No HTTP client available', 503)
-        kwargs = {'headers': _headers, 'timeout': 10}
-        if _USE_CURL_CFFI:
-            kwargs['impersonate'] = 'chrome110'
-        r = cf_requests.get(img_url, **kwargs)
-        data = r.content
-        content_type = r.headers.get('Content-Type', 'image/jpeg')
-        status_code = r.status_code
-        print(f'[img-proxy] {img_url[:80]}: {status_code} {content_type} {len(data)}B', flush=True)
-        # Cloudflare 챌린지 HTML이 내려오면 502
-        if content_type.startswith('text/html'):
-            return ('Upstream returned HTML instead of image', 502)
-        resp = _Response(data, status=200, mimetype=content_type)
-        resp.headers['Cache-Control'] = 'public, max-age=86400'
-        return resp
-    except Exception as e:
-        print(f'[img-proxy] ERROR {img_url[:80]}: {e}', flush=True)
-        return (f'Proxy error: {e}', 502)
 
 
 @app.route('/api/health')
