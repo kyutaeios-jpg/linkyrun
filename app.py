@@ -805,20 +805,16 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
 
-    # HUD CSS를 <head>에 주입 (레이아웃 확정 전에 적용되도록)
-    hud_link = f'<link rel="stylesheet" href="/static/css/hud.css?v={_APP_VER}">'
-
-    if wiki == 'namu':
-        # 나무위키 전용: 자체 고정 내비게이션 바 숨기기 + 컨텐츠 패딩 초기화
+    # 위키별 CSS를 <head>에 주입 (존재할 때만)
+    if wiki == 'namu' and '</head>' in html:
         namu_fix = '''<style>
-/* Reset namu.wiki nav-compensation padding (do NOT hide any elements) */
+/* Reset namu.wiki nav-compensation padding */
 #app,#app>div:first-child,#app>div:first-child>div:first-child{
     padding-top:0!important;margin-top:0!important
 }
 </style>'''
-        html = html.replace('</head>', hud_link + namu_fix + '</head>', 1)
-    else:
-        # Wikipedia 검색바·헤더·푸터 숨기기 CSS 주입
+        html = html.replace('</head>', namu_fix + '</head>', 1)
+    elif wiki != 'namu' and '</head>' in html:
         wp_hide = '''<style>
 .header-container,.minerva-header,.mw-header,.page-actions-menu,
 .talk-namespace-header,.mw-footer,#mw-mf-page-left,.mw-wiki-logo,
@@ -828,7 +824,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
 }
 .content-header-suffix,.pre-content { padding-top:0!important; }
 </style>'''
-        html = html.replace('</head>', hud_link + wp_hide + '</head>', 1)
+        html = html.replace('</head>', wp_hide + '</head>', 1)
 
     # 2. lazy-load 이미지: data-src → src
     def fix_lazy(m):
@@ -886,6 +882,7 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     w_json  = json.dumps(wiki)
 
     inject = f'''
+<link rel="stylesheet" href="/static/css/hud.css?v={_APP_VER}">
 <script src="/static/js/i18n.js?v={_APP_VER}"></script>
 <div id="rh-pad"></div>
 <header id="rh-hud">
