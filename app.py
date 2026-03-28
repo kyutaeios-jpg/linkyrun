@@ -763,6 +763,8 @@ WORKER_TOKEN = os.environ.get('WORKER_TOKEN', 'linkyrun-worker-secret-2024')
 
 # 리다이렉트 맵: redirect_title → canonical_title (예: '안철수' → '안철수 (정치인)')
 _redirect_map: dict = {}
+# 리다이렉트 여부를 확인한 페이지 목록 (재확인 방지)
+_redirect_checked: set = set()
 
 
 def _worker_fetch_namu(title: str):
@@ -1447,6 +1449,18 @@ def page(title):
                 or norm(_redirect_map.get(goal, goal)) == nt
                 or norm(_redirect_map.get(title, title)) == ng
             )
+            # 지연 리다이렉트 확인: goal 페이지가 아직 미확인이면 Worker로 리다이렉트 여부 확인
+            # (예: goal='서울' redirect→'서울특별시', player가 '서울특별시'에 도달했을 때)
+            if not is_goal and wiki == 'namu' and goal not in _redirect_checked:
+                _redirect_checked.add(goal)
+                _worker_fetch_namu(goal)  # _redirect_map[goal] 갱신 가능
+                is_goal = (
+                    nt == ng
+                    or norm(_redirect_map.get(goal, goal)) == nt
+                    or norm(_redirect_map.get(title, title)) == ng
+                )
+                if is_goal:
+                    print(f'[redirect-goal] {goal!r} → {_redirect_map.get(goal)!r}, player at {title!r}', flush=True)
         else:
             is_goal = False
         proxy_html = build_proxy_html(wiki_html, title, goal, wiki, is_goal=is_goal)
@@ -1777,10 +1791,12 @@ def _extract_namu_category_from_html(html: str) -> str:
         return ''
 
 
-def _extract_hint_links(html: str, max_links: int = 6) -> list:
+def _extract_hint_links(html: str, max_links: int = 6, goal: str = '') -> list:
     """namu.wiki HTML(/w/ 링크)에서 본문 링크 제목 추출 — 힌트 2용."""
     from bs4 import BeautifulSoup
     _META_PREFIXES = ('분류:', '파일:', '틀:', '위키백과:', 'Category:', 'File:', 'Template:', '나무위키:', '특수기능:')
+    # 넘겨주기·하위문서 제외용 필터
+    _SKIP_TERMS = ('넘겨주기', '넘기기', 'redirect', '한시적 넘겨주기')
     try:
         soup = BeautifulSoup(html, 'html.parser')
         seen = set()
@@ -1796,7 +1812,17 @@ def _extract_hint_links(html: str, max_links: int = 6) -> list:
                     title = urllib.parse.unquote(m.group(1))
             if not title:
                 continue
+            # 메타 페이지 제외
             if any(title.startswith(p) for p in _META_PREFIXES):
+                continue
+            # 하위문서 제외 (예: '손흥민/클럽 경력')
+            if '/' in title:
+                continue
+            # 넘겨주기 관련 페이지 제외
+            if any(sk in title for sk in _SKIP_TERMS):
+                continue
+            # 목표 페이지 자신 제외
+            if goal and title == goal:
                 continue
             if title not in seen:
                 seen.add(title)
@@ -1837,7 +1863,7 @@ def api_hint():
             # 연관 링크 힌트 (namu) / 첫 문장 힌트 (wikipedia)
             if wiki == 'namu':
                 html = get_page_html(title, wiki)
-                links = _extract_hint_links(html) if html else []
+                links = _extract_hint_links(html, goal=title) if html else []
                 if links:
                     hint = f'이 목표 문서에서 연결되는 주요 페이지: {", ".join(links)}\n\n이 키워드들을 통해 도달 경로를 찾아보세요.'
                 else:
