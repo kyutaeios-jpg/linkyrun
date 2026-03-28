@@ -229,6 +229,23 @@
         setTimeout(showVictory, 200);
     }
 
+    // 나무위키: SPA 레이아웃 상단 패딩 초기화 (HUD 아래 빈 공간 제거)
+    if (typeof WIKI !== 'undefined' && WIKI === 'namu') {
+        const app = document.getElementById('app');
+        if (app) {
+            const reset = el => {
+                el.style.setProperty('padding-top', '0', 'important');
+                el.style.setProperty('margin-top', '0', 'important');
+            };
+            reset(app);
+            const first = app.firstElementChild;
+            if (first) {
+                reset(first);
+                if (first.firstElementChild) reset(first.firstElementChild);
+            }
+        }
+    }
+
     // 활성 게임이 없으면 포기 버튼 → 닫기(홈으로)
     if (!gs || !gs.active) {
         const btn = document.querySelector('.rh-btn-danger');
