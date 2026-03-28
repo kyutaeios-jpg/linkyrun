@@ -811,11 +811,10 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu') 
     if wiki == 'namu':
         # 나무위키 전용: 자체 고정 내비게이션 바 숨기기 + 컨텐츠 패딩 초기화
         namu_fix = '''<style>
-/* Hide namu.wiki fixed nav bar */
-#app>div:first-child,[data-v-bb95daee]{display:none!important}
-/* Reset padding that namu.wiki adds to compensate for its fixed nav */
-#app>div:nth-child(2),#app>div:nth-child(2)>*{padding-top:0!important;margin-top:0!important}
-#app{padding-top:0!important;margin-top:0!important}
+/* Reset namu.wiki nav-compensation padding (do NOT hide any elements) */
+#app,#app>div:first-child,#app>div:first-child>div:first-child{
+    padding-top:0!important;margin-top:0!important
+}
 </style>'''
         html = html.replace('</head>', hud_link + namu_fix + '</head>', 1)
     else:
