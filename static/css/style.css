@@ -613,16 +613,19 @@ kbd {
 /* ── Modal overlay ───────────────────────────────────────── */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.72);
-    backdrop-filter: blur(6px); display: flex; align-items: center;
-    justify-content: center; z-index: 600; padding: 24px;
+    backdrop-filter: blur(6px); display: flex;
+    align-items: center; justify-content: center;
+    z-index: 600; padding: 20px;
     animation: fadeIn 0.2s ease;
 }
 .modal-card {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius); width: 100%; max-width: 640px;
-    max-height: 80vh; display: flex; flex-direction: column;
+    height: 72vh; min-height: 400px; max-height: 680px;
+    display: flex; flex-direction: column;
     overflow: hidden; box-shadow: var(--shadow);
     animation: slideUp 0.25s cubic-bezier(0.16,1,0.3,1);
+    margin: auto;
 }
 .modal-header {
     display: flex; align-items: center; justify-content: space-between;
