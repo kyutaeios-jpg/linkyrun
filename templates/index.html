@@ -817,24 +817,30 @@
             const start = params.get('start');
             const goal  = params.get('goal');
             const wiki  = params.get('wiki') || 'namu';
+            const hops  = params.get('hops');
+            const ms    = parseInt(params.get('ms') || '0', 10);
             if (!start || !goal) return;
 
-            const banner = document.getElementById('challenge-banner');
-            const titleEl = document.getElementById('challenge-banner-title');
-            const descEl  = document.getElementById('challenge-banner-desc');
+            const banner    = document.getElementById('challenge-banner');
+            const titleEl   = document.getElementById('challenge-banner-title');
+            const descEl    = document.getElementById('challenge-banner-desc');
             const acceptBtn = document.getElementById('challenge-accept-btn');
             if (!banner) return;
 
             if (titleEl) titleEl.textContent = t('challengeBannerTitle');
-            if (descEl)  descEl.textContent  = t('challengeBannerDesc')(start, goal);
+            if (descEl) {
+                const routeLine = `${start} → ${goal}`;
+                const recordLine = (hops && ms)
+                    ? `상대 기록: ⏱ ${fmtMs(ms)}  🔗 ${hops}${t('hopsUnit')}`
+                    : '';
+                descEl.innerHTML = esc(routeLine) +
+                    (recordLine ? `<br><span style="color:var(--accent,#FF6B35);font-weight:700">${esc(recordLine)}</span>` : '');
+            }
             banner.style.display = '';
 
             if (acceptBtn) {
-                acceptBtn.onclick = () => {
-                    launchGame(start, goal, 'custom');
-                };
+                acceptBtn.onclick = () => launchGame(start, goal, 'custom');
             }
-            // URL 파라미터 제거 (뒤로가기 방지)
             window.history.replaceState({}, '', '/');
         }
 

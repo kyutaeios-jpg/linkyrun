@@ -222,16 +222,23 @@
         try { await navigator.clipboard.writeText(text); alert(t('copied')); } catch (_) { alert(text); }
     };
 
-    /* ── 친구에게 도전 ────────────────────────────────────── */
+    /* ── 도전장 보내기 ───────────────────────────────────── */
     window.rhChallengeFriend = async function () {
         if (!gs) return;
-        const wiki = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
-        const url = `${window.location.origin}/?challenge=1&start=${encodeURIComponent(gs.start)}&goal=${encodeURIComponent(gs.goal)}&wiki=${encodeURIComponent(wiki)}`;
+        const wiki    = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        const elapsed = gs.elapsed || (Date.now() - gs.startTime);
+        const hops    = gs.hops;
+        const url = `${window.location.origin}/?challenge=1` +
+            `&start=${encodeURIComponent(gs.start)}` +
+            `&goal=${encodeURIComponent(gs.goal)}` +
+            `&wiki=${encodeURIComponent(wiki)}` +
+            `&hops=${hops}&ms=${Math.round(elapsed)}`;
+        const text = t('challengeText')(gs, fmt(elapsed), url);
         try {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(text);
             alert(t('challengeCopied'));
         } catch (_) {
-            alert(url);
+            alert(text);
         }
     };
 
