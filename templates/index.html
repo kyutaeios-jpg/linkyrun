@@ -465,6 +465,16 @@
             navigator.serviceWorker.register('/static/sw.js');
         }
 
+        /* ── iOS Safari 뷰포트 높이 보정 ─────────────────── */
+        (function () {
+            function applyVH() {
+                document.documentElement.style.setProperty('--vh', window.innerHeight + 'px');
+            }
+            applyVH();
+            window.addEventListener('resize', applyVH);
+            window.addEventListener('orientationchange', function () { setTimeout(applyVH, 150); });
+        })();
+
         /* ── UI 언어 선택 (별도 — 게임 위키와 무관) ─── */
         const LANG_LABELS = {
             namu: '한국어', en: 'English', de: 'Deutsch',

@@ -44,21 +44,27 @@ body {
 /* 인트로/선택 화면: 스크롤 없이 화면에 꽉 차게 */
 .index-page {
     height: 100dvh;
+    height: var(--vh, 100dvh); /* JS 보정 — iOS Safari */
     overflow: hidden;
+    overscroll-behavior: none;
     display: flex;
     flex-direction: column;
 }
 .index-page .screen {
     height: 100dvh;
+    height: var(--vh, 100dvh); /* JS 보정 — iOS Safari */
     display: flex;
     flex-direction: column;
     overflow: hidden;
     flex-shrink: 0;
+    overscroll-behavior: none;
 }
 .index-page .container {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* 하단 Safe Area만큼만 패딩 (iOS 과도한 여백 방지) */
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
 a { color: inherit; text-decoration: none; }
@@ -84,7 +90,7 @@ kbd {
         radial-gradient(ellipse at 80% 40%, rgba(56,189,248,0.14) 0%, transparent 55%),
         linear-gradient(180deg, #0A1020 0%, #070B14 100%);
     border-bottom: 1px solid var(--border);
-    padding: calc(20px + env(safe-area-inset-top)) 24px 18px;
+    padding: calc(16px + env(safe-area-inset-top)) 16px 14px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -123,7 +129,7 @@ kbd {
 .container {
     max-width: 680px;
     margin: 0 auto;
-    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    padding: 12px 14px 10px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -147,13 +153,13 @@ kbd {
 }
 
 /* ── Input ───────────────────────────────────────────────── */
-.input-group { margin-bottom: 8px; }
+.input-group { margin-bottom: 6px; }
 
 .input-label {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .label-badge {
@@ -178,8 +184,8 @@ kbd {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     color: var(--text);
-    padding: 10px 14px;
-    font-size: 0.95rem;
+    padding: 9px 12px;
+    font-size: 0.92rem;
     transition: border-color var(--transition), box-shadow var(--transition);
     outline: none;
 }
@@ -190,8 +196,8 @@ kbd {
 .text-input::placeholder { color: var(--text-dim); }
 
 .btn-random {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -206,15 +212,15 @@ kbd {
 .setup-arrow {
     text-align: center;
     color: var(--text-dim);
-    font-size: 1.2rem;
-    padding: 4px 0 12px;
+    font-size: 1.1rem;
+    padding: 2px 0 6px;
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn-start {
     width: 100%;
-    margin-top: 14px;
-    padding: 13px;
+    margin-top: 10px;
+    padding: 12px;
     background: linear-gradient(135deg, #FF6B35, #FF4ECD);
     color: #fff;
     border-radius: var(--radius-sm);
@@ -547,14 +553,14 @@ kbd {
 }
 .btn-back-ghost:hover { background: var(--bg-input); color: var(--text); }
 
-.diff-container { padding-top: 12px; }
-.diff-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; }
+.diff-container { padding-top: 8px; }
+.diff-desc { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 10px; }
 
-.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .diff-card {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 18px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 10px;
     background: var(--bg-card); border: 2px solid var(--border);
     border-radius: var(--radius); text-align: center;
     transition: transform var(--transition), border-color var(--transition),
@@ -570,9 +576,9 @@ kbd {
 .diff-hard:hover,      .diff-hard:focus      { border-color: #FF6B35; background: rgba(255,107,53,0.07); }
 .diff-very-hard:hover, .diff-very-hard:focus { border-color: #FF4D6D; background: rgba(255,77,109,0.07); }
 
-.diff-card-icon   { font-size: 1.8rem; line-height: 1; }
-.diff-card-name   { font-size: 1.1rem; font-weight: 800; color: var(--text); }
-.diff-card-detail { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+.diff-card-icon   { font-size: 1.5rem; line-height: 1; }
+.diff-card-name   { font-size: 1rem; font-weight: 800; color: var(--text); }
+.diff-card-detail { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
 
 /* ── Custom card ─────────────────────────────────────────── */
 .custom-card .setup-arrow { text-align: center; color: var(--text-dim); font-size: 1.2rem; padding: 6px 0; }
@@ -734,6 +740,23 @@ kbd {
 .wiki-flag { font-size: 1.8rem; line-height: 1; }
 .wiki-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
 .wiki-lang { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ── 높이 기반 반응형 — 작은 화면에서 추가 압축 ───────────── */
+@media (max-height: 720px) {
+    .index-page .hero {
+        padding-top: calc(10px + env(safe-area-inset-top));
+        padding-bottom: 10px;
+    }
+    .hero-logo { font-size: 34px; margin-bottom: 6px; }
+    .hero-subtitle { font-size: 0.88rem; }
+    .hero-title { font-size: clamp(1.5rem, 5vw, 2.4rem); margin-bottom: 4px; }
+    .index-page .container { gap: 8px; padding-top: 8px; }
+    .card { padding: 12px 14px; }
+    .diff-card { padding: 10px 8px; }
+    .diff-grid { gap: 8px; }
+    .diff-card-icon { font-size: 1.2rem; }
+    .section-title { margin-bottom: 6px; }
+}
 
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 480px) {
