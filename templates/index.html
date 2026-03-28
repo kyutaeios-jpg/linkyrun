@@ -50,28 +50,34 @@
         }
         .lang-option:hover { background: rgba(255,255,255,0.06); }
         .lang-option.active { color: #FF6B35; font-weight: 700; }
-        /* 위키 선택 탭 */
-        .wiki-selector {
-            display: flex; gap: 6px; padding: 0 16px 12px;
-            overflow-x: auto; overflow-y: hidden;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; flex-wrap: nowrap;
+        /* 위키 선택 카드 */
+        .wiki-cards {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; padding: 4px 0;
         }
-        .wiki-selector::-webkit-scrollbar { display: none; }
-        .wiki-tab {
-            flex-shrink: 0;
-            padding: 6px 12px; border-radius: 20px; font-size: 0.8rem;
-            font-weight: 600; cursor: pointer; font-family: inherit;
+        .wiki-card {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px; padding: 20px 12px;
+            background: var(--card-bg, #0E1525);
             border: 1.5px solid var(--border, #1E2D45);
-            background: transparent; color: var(--text-muted, #7B8FAD);
-            transition: all .15s;
+            border-radius: 16px; cursor: pointer;
+            font-family: inherit; color: var(--text, #F0F4FF);
+            transition: border-color .15s, background .15s;
+            text-align: center;
         }
-        .wiki-tab.active {
-            background: var(--accent, #FF6B35);
-            border-color: var(--accent, #FF6B35);
-            color: #fff;
+        .wiki-card:hover { border-color: var(--accent, #FF6B35); }
+        .wiki-card:active { opacity: 0.75; }
+        .wiki-card-flag { font-size: 2rem; line-height: 1; }
+        .wiki-card-name { font-size: 0.92rem; font-weight: 700; }
+        .wiki-card-desc { font-size: 0.75rem; color: var(--text-muted, #7B8FAD); }
+        /* 선택된 위키 배지 */
+        .wiki-badge {
+            font-size: 0.75rem; font-weight: 600;
+            background: rgba(255,107,53,0.15);
+            color: var(--accent, #FF6B35);
+            border-radius: 10px; padding: 2px 8px;
+            margin-left: 6px; vertical-align: middle;
         }
-        .wiki-tab:active { opacity: 0.7; }
     </style>
 </head>
 <body class="index-page">
@@ -123,24 +129,64 @@
     </div>
 
     <!-- ══════════════════════════════════════════
-         화면 1: 난이도 선택
+         화면 1: 위키 선택
+    ══════════════════════════════════════════ -->
+    <div class="screen screen-hidden" id="screen-wiki">
+        <header class="diff-header">
+            <button class="btn-back" id="btn-back-wiki" data-i18n="btnBack">← 뒤로</button>
+            <h2 class="diff-header-title" data-i18n="wikiSelectTitle">위키 선택</h2>
+            <div style="width:56px"></div>
+        </header>
+        <main class="container diff-container">
+            <div class="card">
+                <div class="wiki-cards">
+                    <button class="wiki-card" data-wiki="namu">
+                        <span class="wiki-card-flag">🇰🇷</span>
+                        <span class="wiki-card-name">나무위키</span>
+                        <span class="wiki-card-desc">Korean wiki</span>
+                    </button>
+                    <button class="wiki-card" data-wiki="ko">
+                        <span class="wiki-card-flag">🇰🇷</span>
+                        <span class="wiki-card-name">위키백과</span>
+                        <span class="wiki-card-desc">한국어 Wikipedia</span>
+                    </button>
+                    <button class="wiki-card" data-wiki="en">
+                        <span class="wiki-card-flag">🇺🇸</span>
+                        <span class="wiki-card-name">Wikipedia</span>
+                        <span class="wiki-card-desc">English</span>
+                    </button>
+                    <button class="wiki-card" data-wiki="de">
+                        <span class="wiki-card-flag">🇩🇪</span>
+                        <span class="wiki-card-name">Wikipedia</span>
+                        <span class="wiki-card-desc">Deutsch</span>
+                    </button>
+                    <button class="wiki-card" data-wiki="fr">
+                        <span class="wiki-card-flag">🇫🇷</span>
+                        <span class="wiki-card-name">Wikipédia</span>
+                        <span class="wiki-card-desc">Français</span>
+                    </button>
+                    <button class="wiki-card" data-wiki="ja">
+                        <span class="wiki-card-flag">🇯🇵</span>
+                        <span class="wiki-card-name">ウィキペディア</span>
+                        <span class="wiki-card-desc">日本語</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         화면 2: 난이도 선택
     ══════════════════════════════════════════ -->
     <div class="screen screen-hidden" id="screen-difficulty">
         <header class="diff-header">
-            <button class="btn-back" id="btn-back" data-i18n="btnBack">← 뒤로</button>
-            <h2 class="diff-header-title" data-i18n="screenDiffTitle">게임 시작</h2>
+            <button class="btn-back" id="btn-back-diff" data-i18n="btnBack">← 뒤로</button>
+            <h2 class="diff-header-title">
+                <span data-i18n="screenDiffTitle">게임 시작</span>
+                <span class="wiki-badge" id="wiki-badge">나무위키</span>
+            </h2>
             <button class="btn-back-ghost" id="btn-open-lb-diff" data-i18n="btnRanking">🏆 랭킹</button>
         </header>
-
-        <!-- 위키 선택 (게임 대상 위키) -->
-        <div class="wiki-selector" id="wiki-selector">
-            <button class="wiki-tab active" data-wiki="namu">🇰🇷 나무위키</button>
-            <button class="wiki-tab" data-wiki="ko">🇰🇷 위키백과</button>
-            <button class="wiki-tab" data-wiki="en">🇺🇸 Wikipedia</button>
-            <button class="wiki-tab" data-wiki="de">🇩🇪 Wikipedia</button>
-            <button class="wiki-tab" data-wiki="fr">🇫🇷 Wikipédia</button>
-            <button class="wiki-tab" data-wiki="ja">🇯🇵 ウィキペディア</button>
-        </div>
 
         <main class="container diff-container">
 
@@ -273,22 +319,33 @@
         });
 
         /* ── 게임 위키 선택 (별도 — UI 언어와 무관) ─── */
-        /* 기본 위키: 기기 언어에 맞게 */
         const DEVICE_WIKI_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
         let selectedWiki = DEVICE_WIKI_MAP[deviceCode] || 'namu';
 
+        const WIKI_BADGE_LABELS = {
+            namu: '나무위키', ko: '위키백과',
+            en: 'Wikipedia (EN)', de: 'Wikipedia (DE)',
+            fr: 'Wikipédia (FR)', ja: 'ウィキペディア',
+        };
+
         function setWiki(wiki) {
             selectedWiki = wiki;
-            document.querySelectorAll('.wiki-tab').forEach(el => {
-                el.classList.toggle('active', el.dataset.wiki === wiki);
+            document.querySelectorAll('.wiki-card').forEach(el => {
+                el.style.borderColor = el.dataset.wiki === wiki ? 'var(--accent, #FF6B35)' : '';
+                el.style.background  = el.dataset.wiki === wiki ? 'rgba(255,107,53,0.08)' : '';
             });
+            const badge = document.getElementById('wiki-badge');
+            if (badge) badge.textContent = WIKI_BADGE_LABELS[wiki] || wiki;
             updateDatalist(wiki);
             document.getElementById('start-input').value = '';
             document.getElementById('goal-input').value = '';
         }
 
-        document.querySelectorAll('.wiki-tab').forEach(el => {
-            el.addEventListener('click', () => setWiki(el.dataset.wiki));
+        document.querySelectorAll('.wiki-card').forEach(el => {
+            el.addEventListener('click', () => {
+                setWiki(el.dataset.wiki);
+                showScreen('screen-difficulty');
+            });
         });
 
         /* ── 자동완성 ─────────────────────────────── */
@@ -434,8 +491,9 @@
 
         /* ── 이벤트 연결 ─────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-difficulty'));
-            document.getElementById('btn-back').addEventListener('click', () => showScreen('screen-intro'));
+            document.getElementById('btn-go-difficulty').addEventListener('click', () => showScreen('screen-wiki'));
+            document.getElementById('btn-back-wiki').addEventListener('click', () => showScreen('screen-intro'));
+            document.getElementById('btn-back-diff').addEventListener('click', () => showScreen('screen-wiki'));
 
             document.querySelectorAll('.diff-card').forEach(card => {
                 card.addEventListener('click', () => startByDifficulty(card.dataset.difficulty));
