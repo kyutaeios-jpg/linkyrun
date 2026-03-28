@@ -1625,6 +1625,7 @@ def api_health():
         with _db_conn() as c:
             _execute(c, 'SELECT 1')
         status['db'] = True
+        status['db_type'] = 'postgresql' if _USE_PG else 'sqlite'
     except Exception as e:
         status['db_error'] = str(e)
 
