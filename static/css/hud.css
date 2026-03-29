@@ -1,4 +1,4 @@
-/* ── Linky Run 게임 HUD (프록시 페이지용, 독립 스타일) ─── */
+/* ── Linky Run 게임 HUD ─── */
 :root {
     --rh-primary:   #FF6B35;
     --rh-accent:    #38BDF8;
@@ -8,10 +8,9 @@
     --rh-muted:     #7B8FAD;
     --rh-border:    #1E2D45;
     --rh-danger:    #FF4D6D;
-    --rh-hud-h:     72px;
+    --rh-hud-h:     60px;
 }
 
-/* ── HUD 높이만큼 body 상단 여백 ── */
 body {
     padding-top: calc(var(--rh-hud-h) + env(safe-area-inset-top)) !important;
     margin-top: 0 !important;
@@ -19,99 +18,133 @@ body {
 
 #rh-pad { display: none; }
 
-/* ── HUD 메인 바 ─────────────────────────────────────────── */
+/* ── HUD 바 ── */
 #rh-hud {
     position: fixed;
     top: 0; left: 0; right: 0;
     height: calc(var(--rh-hud-h) + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
+    padding-left: 14px;
+    padding-right: 14px;
     background: var(--rh-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--rh-border);
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     z-index: 2147483647;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
 }
 
-/* ── 1행: 타이머·홉 + 포기 버튼 ── */
-.rh-hud-row1 {
+/* ── 왼쪽: 타이머 · 홉 ── */
+.rh-hud-left {
     display: flex;
+    gap: 10px;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
-    height: 38px;
     flex-shrink: 0;
 }
-
-.rh-hud-left  { display: flex; gap: 10px; align-items: center; }
-.rh-hud-stat  { display: flex; gap: 5px; align-items: center; }
-.rh-hud-sep   { width: 1px; height: 14px; background: var(--rh-border); }
-.rh-hud-icon  { font-size: 14px; opacity: 0.8; }
-.rh-hud-val   {
-    font-size: 16px; font-weight: 700;
+.rh-hud-stat {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.rh-hud-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--rh-border);
+    flex-shrink: 0;
+}
+.rh-hud-icon {
+    font-size: 14px;
+    opacity: 0.75;
+    line-height: 1;
+}
+.rh-hud-val {
+    font-size: 16px;
+    font-weight: 700;
     color: var(--rh-text);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+    line-height: 1;
 }
 #rh-timer { color: var(--rh-primary); }
 #rh-hops  { color: var(--rh-accent); }
 
-.rh-hud-right { display: flex; gap: 6px; flex-shrink: 0; }
+/* ── 중앙: 목표 (탭 = 경로 토글) ── */
+.rh-hud-center {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 10px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
+}
+.rh-hud-center:active {
+    background: rgba(255,255,255,0.07);
+}
 
-/* ── 2행: 현재 페이지 → 목표 (탭=경로패널 토글) ── */
-.rh-hud-row2 {
+.rh-hud-goal-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--rh-muted);
+    line-height: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 14px;
-    height: 34px;
-    flex-shrink: 0;
-    cursor: pointer;
-    background: rgba(255,255,255,0.025);
-    border-top: 1px solid rgba(255,255,255,0.05);
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    gap: 4px;
 }
-.rh-hud-row2:active { background: rgba(255,255,255,0.06); }
-
-.rh-hud-current {
-    font-size: 13px; font-weight: 600;
-    color: var(--rh-muted);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 35%;
-    flex-shrink: 1;
-}
-.rh-hud-arrow {
-    font-size: 16px; color: var(--rh-border);
-    flex-shrink: 0; opacity: 0.9;
-}
-.rh-hud-goal {
-    font-size: 15px; font-weight: 800; color: var(--rh-accent);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    flex: 1; min-width: 0;
-}
-.rh-hud-path-toggle {
-    font-size: 12px; color: var(--rh-muted);
-    flex-shrink: 0; margin-left: auto;
+.rh-hud-goal-label::after {
+    content: '▾';
+    font-size: 8px;
     transition: transform 0.2s ease;
 }
-.rh-hud-path-open .rh-hud-path-toggle { transform: rotate(180deg); }
+.rh-hud-path-open .rh-hud-goal-label::after {
+    transform: rotate(180deg);
+}
+.rh-hud-goal {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--rh-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.2;
+}
 
-/* ── HUD 버튼 ── */
+/* 숨겨진 레거시 토글 span (JS 참조용, 표시 안 함) */
+.rh-hud-path-toggle { display: none; }
+
+/* ── 오른쪽: 포기 버튼 ── */
+.rh-hud-right {
+    display: flex;
+    flex-shrink: 0;
+}
+
 .rh-btn {
-    padding: 7px 16px;
+    padding: 9px 18px;
     border-radius: 8px;
     border: 1px solid var(--rh-border);
     background: rgba(255,255,255,0.07);
     color: var(--rh-text);
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    white-space: nowrap; line-height: 1;
-    min-height: 32px;
-    display: flex; align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    line-height: 1;
+    display: flex;
+    align-items: center;
     transition: background 0.15s, border-color 0.15s;
 }
 .rh-btn:active { opacity: 0.7; }
@@ -121,7 +154,7 @@ body {
     color: var(--rh-danger);
 }
 
-/* ── 경로 패널 ───────────────────────────────────────────── */
+/* ── 경로 패널 ── */
 #rh-path-panel {
     position: fixed;
     top: calc(var(--rh-hud-h) + env(safe-area-inset-top));
@@ -130,8 +163,9 @@ body {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--rh-border);
-    padding: 12px 16px;
-    overflow-x: auto; white-space: nowrap;
+    padding: 12px 18px;
+    overflow-x: auto;
+    white-space: nowrap;
     z-index: 2147483646;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
@@ -140,7 +174,7 @@ body {
 .rh-path-cur   { color: var(--rh-primary); font-weight: 700; }
 .rh-path-arrow { color: var(--rh-border); margin: 0 5px; }
 
-/* ── 빅토리 오버레이 ─────────────────────────────────────── */
+/* ── 빅토리 오버레이 ── */
 #rh-victory {
     position: fixed; inset: 0;
     z-index: 2147483647;
@@ -159,7 +193,7 @@ body {
     display: flex; flex-direction: column; gap: 18px;
     max-height: 90vh; overflow-y: auto; box-sizing: border-box;
 }
-.rh-v-icon   { font-size: 3rem; text-align: center; animation: vBounce 0.5s ease 0.2s both; }
+.rh-v-icon { font-size: 3rem; text-align: center; animation: vBounce 0.5s ease 0.2s both; }
 @keyframes vBounce {
     0%   { transform: scale(0.5); opacity: 0; }
     70%  { transform: scale(1.2); }
@@ -170,8 +204,8 @@ body {
     background: linear-gradient(120deg, #FF6B35, #FF4ECD, #38BDF8);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.rh-v-stats  { display: flex; gap: 12px; }
-.rh-v-stat   {
+.rh-v-stats { display: flex; gap: 12px; }
+.rh-v-stat {
     flex: 1; background: rgba(255,255,255,0.04);
     border-radius: 14px; padding: 14px 12px; text-align: center;
     border: 1px solid var(--rh-border);
@@ -188,7 +222,7 @@ body {
     font-size: 10px; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--rh-muted); margin-bottom: 6px;
 }
-.rh-v-path   { font-size: 14px; color: var(--rh-text); line-height: 1.9; word-break: break-all; }
+.rh-v-path { font-size: 14px; color: var(--rh-text); line-height: 1.9; word-break: break-all; }
 .rh-vpath-goal  { color: var(--rh-primary); font-weight: 700; }
 .rh-vpath-arrow { color: var(--rh-border); margin: 0 4px; }
 
@@ -237,7 +271,7 @@ body {
     align-items: center; justify-content: center;
 }
 
-/* ── 포기 확인 모달 ─────────────────────────────────────── */
+/* ── 포기 확인 모달 ── */
 #rh-giveup-modal {
     position: fixed; inset: 0; z-index: 9999;
     display: flex; align-items: center; justify-content: center;

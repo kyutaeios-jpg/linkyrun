@@ -924,27 +924,24 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu', 
 <script src="/static/js/i18n.js?v={_APP_VER}"></script>
 <div id="rh-pad"></div>
 <header id="rh-hud">
-  <div class="rh-hud-row1">
-    <div class="rh-hud-left">
-      <div class="rh-hud-stat">
-        <span class="rh-hud-icon">⏱</span>
-        <span class="rh-hud-val" id="rh-timer">00:00</span>
-      </div>
-      <div class="rh-hud-sep"></div>
-      <div class="rh-hud-stat">
-        <span class="rh-hud-icon">🔗</span>
-        <span class="rh-hud-val" id="rh-hops">0</span>
-      </div>
+  <div class="rh-hud-left">
+    <div class="rh-hud-stat">
+      <span class="rh-hud-icon">⏱</span>
+      <span class="rh-hud-val" id="rh-timer">00:00</span>
     </div>
-    <div class="rh-hud-right">
-      <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()" data-i18n="btnGiveUp">포기</button>
+    <div class="rh-hud-sep"></div>
+    <div class="rh-hud-stat">
+      <span class="rh-hud-icon">🔗</span>
+      <span class="rh-hud-val" id="rh-hops">0</span>
     </div>
   </div>
-  <div class="rh-hud-row2" id="rh-hud-row2" onclick="rhTogglePath()">
-    <span class="rh-hud-current" id="rh-current">—</span>
-    <span class="rh-hud-arrow">›</span>
+  <button class="rh-hud-center" id="rh-hud-center" onclick="rhTogglePath()">
+    <span class="rh-hud-goal-label" data-i18n="hudGoalLabel">목표</span>
     <span class="rh-hud-goal" id="rh-goal">—</span>
     <span class="rh-hud-path-toggle" id="rh-path-toggle">▾</span>
+  </button>
+  <div class="rh-hud-right">
+    <button class="rh-btn rh-btn-danger" onclick="rhGiveUp()" data-i18n="btnGiveUp">포기</button>
   </div>
 </header>
 
