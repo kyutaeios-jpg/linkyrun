@@ -227,19 +227,19 @@ body {
 .rh-vpath-arrow { color: var(--rh-border); margin: 0 4px; }
 
 .rh-rank-title { font-size: 14px; font-weight: 700; color: var(--rh-text); text-align: center; margin-bottom: 8px; }
-.rh-rank-row   { display: flex; gap: 8px; }
+.rh-rank-row   { display: flex; flex-direction: column; gap: 8px; }
 .rh-rank-input {
-    flex: 1; background: rgba(255,255,255,0.05);
+    width: 100%; background: rgba(255,255,255,0.05);
     border: 1px solid var(--rh-border); border-radius: 10px;
-    padding: 11px 14px; color: var(--rh-text);
+    padding: 12px 14px; color: var(--rh-text);
     font-size: 15px; font-family: inherit; outline: none; box-sizing: border-box;
 }
 .rh-rank-input:focus { border-color: var(--rh-primary); }
 .rh-rank-submit {
-    padding: 11px 18px;
+    width: 100%; padding: 13px;
     background: linear-gradient(135deg, #FF6B35, #FF4ECD);
     color: white; border: none; border-radius: 10px;
-    font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; white-space: nowrap;
+    font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit;
     box-shadow: 0 2px 12px rgba(255,107,53,0.35);
 }
 .rh-rank-result {
