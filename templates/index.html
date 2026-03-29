@@ -212,6 +212,69 @@
         .intro-actions .btn-leaderboard-outline {
             flex: 1; margin: 0;
         }
+        /* ── 도전 확인 시트 ── */
+        .challenge-sheet-overlay {
+            position: fixed; inset: 0; z-index: 700;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: flex-end; justify-content: center;
+            animation: fadeIn 0.18s ease;
+        }
+        .challenge-sheet-overlay[hidden] { display: none !important; }
+        .challenge-sheet {
+            width: 100%; max-width: 520px;
+            background: var(--bg-card, #0E1525);
+            border: 1px solid var(--border, #1E2D45);
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            padding: 24px 24px max(24px, env(safe-area-inset-bottom));
+            display: flex; flex-direction: column; gap: 16px;
+            animation: slideUp 0.22s cubic-bezier(0.16,1,0.3,1);
+        }
+        .challenge-sheet-label {
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted, #7B8FAD);
+        }
+        .challenge-sheet-route {
+            display: flex; align-items: center; gap: 10px;
+            flex-wrap: wrap;
+        }
+        .challenge-sheet-start {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--accent, #38BDF8);
+        }
+        .challenge-sheet-arrow {
+            font-size: 1rem; color: var(--text-muted, #7B8FAD);
+        }
+        .challenge-sheet-goal {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--primary, #FF6B35);
+        }
+        .challenge-sheet-record {
+            font-size: 0.85rem; color: var(--text-muted, #7B8FAD);
+        }
+        .challenge-sheet-actions {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .challenge-sheet-btn-start {
+            width: 100%; padding: 15px;
+            background: linear-gradient(135deg, #FF6B35, #FF4ECD);
+            color: white; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(255,107,53,0.3);
+            transition: opacity 0.15s;
+        }
+        .challenge-sheet-btn-start:active { opacity: 0.8; }
+        .challenge-sheet-btn-cancel {
+            width: 100%; padding: 13px;
+            background: transparent;
+            border: 1px solid var(--border, #1E2D45);
+            border-radius: 12px; color: var(--text-muted, #7B8FAD);
+            font-size: 0.95rem; font-weight: 600;
+            font-family: inherit; cursor: pointer;
+        }
     </style>
 </head>
 <body class="index-page">
@@ -446,6 +509,25 @@
             </div>
             <div id="lb-content" class="lb-content">
                 <div class="lb-empty" data-i18n="lbSelect">탭을 선택해서 랭킹을 확인하세요</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         도전 확인 시트 (랭킹 항목 클릭 시)
+    ══════════════════════════════════════════ -->
+    <div id="challenge-sheet-overlay" class="challenge-sheet-overlay" hidden onclick="closeChallengeSheet()">
+        <div class="challenge-sheet" onclick="event.stopPropagation()">
+            <div class="challenge-sheet-label">도전하기</div>
+            <div class="challenge-sheet-route">
+                <span class="challenge-sheet-start" id="cs-start">—</span>
+                <span class="challenge-sheet-arrow">→</span>
+                <span class="challenge-sheet-goal" id="cs-goal">—</span>
+            </div>
+            <div class="challenge-sheet-record" id="cs-record"></div>
+            <div class="challenge-sheet-actions">
+                <button class="challenge-sheet-btn-start" id="cs-btn-start" onclick="confirmChallengeSheet()">도전 시작 ▶</button>
+                <button class="challenge-sheet-btn-cancel" onclick="closeChallengeSheet()">취소</button>
             </div>
         </div>
     </div>
@@ -699,7 +781,12 @@
                 }
                 const entries = data.rankings.map((r, i) => {
                     const medal = ['🥇','🥈','🥉'][i] ?? `<span style="font-size:0.9rem;font-weight:700;color:var(--text-muted)">${i+1}</span>`;
-                    return `<div class="lb-entry">
+                    const ds = encodeURIComponent(r.start), dg = encodeURIComponent(r.goal),
+                          dw = encodeURIComponent(activeLbWiki),
+                          dt = `${fmtMs(r.elapsed_ms)} · ${r.hops}${t('hopsUnit')} · ${esc(r.nickname)}`;
+                    return `<div class="lb-entry lb-entry-clickable"
+                                data-start="${ds}" data-goal="${dg}" data-wiki="${dw}" data-record="${encodeURIComponent(dt)}"
+                                onclick="openChallengeSheet(this)">
                         <div class="lb-entry-top">
                             <span class="lb-entry-rank">${medal}</span>
                             <span class="lb-entry-nick">${esc(r.nickname)}</span>
@@ -854,6 +941,30 @@
                 };
             }
             window.history.replaceState({}, '', '/');
+        }
+
+        /* ── 랭킹 도전 시트 ────────────────────── */
+        let _csWiki = 'namu';
+        function openChallengeSheet(el) {
+            const start  = decodeURIComponent(el.dataset.start);
+            const goal   = decodeURIComponent(el.dataset.goal);
+            const wiki   = decodeURIComponent(el.dataset.wiki);
+            const record = decodeURIComponent(el.dataset.record);
+            _csWiki = wiki;
+            document.getElementById('cs-start').textContent  = start;
+            document.getElementById('cs-goal').textContent   = goal;
+            document.getElementById('cs-record').textContent = record;
+            document.getElementById('challenge-sheet-overlay').removeAttribute('hidden');
+        }
+        function closeChallengeSheet() {
+            document.getElementById('challenge-sheet-overlay').setAttribute('hidden', '');
+        }
+        function confirmChallengeSheet() {
+            const start = document.getElementById('cs-start').textContent;
+            const goal  = document.getElementById('cs-goal').textContent;
+            closeChallengeSheet();
+            if (_csWiki && _csWiki !== selectedWiki) setWiki(_csWiki);
+            launchGame(start, goal, 'custom');
         }
 
         function detectChallengeBanner() {
