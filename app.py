@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import difflib
 import random
 import string
 import sqlite3
@@ -313,7 +314,7 @@ WIKI_DIFFICULTY_THRESHOLDS = {
     'ja':   [(400, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
 }
 # 유효한 목표 페이지의 최소 역링크 수 (이 미만이면 목표로 사용하지 않음)
-MIN_GOAL_BACKLINKS = 3
+MIN_GOAL_BACKLINKS = 10
 
 # 난이도별 페이지 풀 (랜덤 게임 생성용)
 PAGES_BY_DIFFICULTY = {
@@ -1437,27 +1438,43 @@ def page(title):
 
     if wiki_html:
         # Wikipedia 링크 내 언더스코어를 공백으로 정규화해서 is_goal 판단
-        norm = lambda s: unquote(s).replace('_', ' ').strip()
+        norm = lambda s: unquote(s).replace('_', ' ').strip().lower()
+        _strip_paren = lambda s: re.sub(r'\s*\([^)]*\)\s*$', '', s).strip()
+
+        def _is_goal_match(t, g):
+            """4-layer goal detection"""
+            nt, ng = norm(t), norm(g)
+            # Layer 1: 직접 일치
+            if nt == ng:
+                return True
+            # Layer 2: 리다이렉트 맵
+            if norm(_redirect_map.get(g, g)) == nt:
+                return True
+            if norm(_redirect_map.get(t, t)) == ng:
+                return True
+            # Layer 3: 괄호 제거 후 비교 (동음이의어 구분자 제거)
+            st, sg = _strip_paren(nt), _strip_paren(ng)
+            if st and sg and st == sg:
+                return True
+            # Layer 4: 유사도 매칭 (0.88 이상, 양쪽 모두 4자 이상)
+            if len(nt) >= 4 and len(ng) >= 4:
+                ratio = difflib.SequenceMatcher(None, nt, ng).ratio()
+                if ratio >= 0.88:
+                    return True
+            return False
+
         if bool(goal):
-            nt, ng = norm(title), norm(goal)
-            # 직접 일치 OR 현재 페이지가 목표의 리다이렉트 대상 OR 목표가 현재 페이지의 리다이렉트 대상
-            is_goal = (
-                nt == ng
-                or norm(_redirect_map.get(goal, goal)) == nt
-                or norm(_redirect_map.get(title, title)) == ng
-            )
+            is_goal = _is_goal_match(title, goal)
             # 지연 리다이렉트 확인: goal 페이지가 아직 미확인이면 Worker로 리다이렉트 여부 확인
             # (예: goal='서울' redirect→'서울특별시', player가 '서울특별시'에 도달했을 때)
             if not is_goal and wiki == 'namu' and goal not in _redirect_checked:
                 _redirect_checked.add(goal)
                 _worker_fetch_namu(goal)  # _redirect_map[goal] 갱신 가능
-                is_goal = (
-                    nt == ng
-                    or norm(_redirect_map.get(goal, goal)) == nt
-                    or norm(_redirect_map.get(title, title)) == ng
-                )
+                is_goal = _is_goal_match(title, goal)
                 if is_goal:
                     print(f'[redirect-goal] {goal!r} → {_redirect_map.get(goal)!r}, player at {title!r}', flush=True)
+            if is_goal:
+                print(f'[goal-match] title={title!r} goal={goal!r}', flush=True)
         else:
             is_goal = False
         proxy_html = build_proxy_html(wiki_html, title, goal, wiki, is_goal=is_goal)
