@@ -306,12 +306,12 @@ DIFFICULTY_THRESHOLDS = [
 # 각 항목: (최소 역링크 수, 난이도 키)
 # very_hard 최소값을 3으로 설정 — 역링크 0~2개는 도달 자체가 거의 불가능하므로 제외
 WIKI_DIFFICULTY_THRESHOLDS = {
-    'namu': [(500, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
-    'en':   [(500, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
-    'ko':   [(200, 'easy'), (50,  'medium'), (10, 'hard'), (3, 'very_hard')],
-    'de':   [(300, 'easy'), (80,  'medium'), (15, 'hard'), (3, 'very_hard')],
-    'fr':   [(300, 'easy'), (80,  'medium'), (15, 'hard'), (3, 'very_hard')],
-    'ja':   [(400, 'easy'), (100, 'medium'), (20, 'hard'), (3, 'very_hard')],
+    'namu': [(500, 'easy'), (120, 'medium'), (40, 'hard'), (10, 'very_hard')],
+    'en':   [(500, 'easy'), (120, 'medium'), (40, 'hard'), (10, 'very_hard')],
+    'ko':   [(200, 'easy'), (60,  'medium'), (25, 'hard'), (10, 'very_hard')],
+    'de':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
+    'fr':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
+    'ja':   [(400, 'easy'), (120, 'medium'), (40, 'hard'), (10, 'very_hard')],
 }
 # 유효한 목표 페이지의 최소 역링크 수 (이 미만이면 목표로 사용하지 않음)
 MIN_GOAL_BACKLINKS = 10
