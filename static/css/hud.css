@@ -2,22 +2,21 @@
 :root {
     --rh-primary:   #FF6B35;
     --rh-accent:    #38BDF8;
-    --rh-bg:        rgba(7, 11, 20, 0.96);
+    --rh-bg:        rgba(7, 11, 20, 0.97);
     --rh-bg-card:   #0E1525;
     --rh-text:      #F0F4FF;
     --rh-muted:     #7B8FAD;
     --rh-border:    #1E2D45;
     --rh-danger:    #FF4D6D;
-    --rh-hud-h:     52px;
+    --rh-hud-h:     72px;
 }
 
-/* ── HUD 높이만큼 body 상단 여백 (위키 컨텐츠가 HUD에 가리지 않도록) ── */
+/* ── HUD 높이만큼 body 상단 여백 ── */
 body {
     padding-top: calc(var(--rh-hud-h) + env(safe-area-inset-top)) !important;
     margin-top: 0 !important;
 }
 
-/* (레거시 pad div - 호환성 유지용) */
 #rh-pad { display: none; }
 
 /* ── HUD 메인 바 ─────────────────────────────────────────── */
@@ -26,63 +25,99 @@ body {
     top: 0; left: 0; right: 0;
     height: calc(var(--rh-hud-h) + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
-    padding-left: 12px;
-    padding-right: 12px;
     background: var(--rh-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--rh-border);
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
     z-index: 2147483647;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
 }
 
-.rh-hud-left  { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.rh-hud-stat  { display: flex; gap: 4px; align-items: center; }
-.rh-hud-icon  { font-size: 13px; }
+/* ── 1행: 타이머·홉 + 포기 버튼 ── */
+.rh-hud-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 38px;
+    flex-shrink: 0;
+}
+
+.rh-hud-left  { display: flex; gap: 10px; align-items: center; }
+.rh-hud-stat  { display: flex; gap: 5px; align-items: center; }
+.rh-hud-sep   { width: 1px; height: 14px; background: var(--rh-border); }
+.rh-hud-icon  { font-size: 14px; opacity: 0.8; }
 .rh-hud-val   {
-    font-size: 14px; font-weight: 700;
+    font-size: 16px; font-weight: 700;
     color: var(--rh-text);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
 }
-/* 타이머: 오렌지(달리는 느낌), 홉: 하늘색(링크 느낌) */
 #rh-timer { color: var(--rh-primary); }
 #rh-hops  { color: var(--rh-accent); }
 
-.rh-hud-center {
-    flex: 1;
-    display: flex; flex-direction: column; align-items: center;
-    overflow: hidden; min-width: 0;
-}
-.rh-hud-goal-label {
-    font-size: 9px; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--rh-muted);
-}
-.rh-hud-goal {
-    font-size: 13px; font-weight: 700; color: var(--rh-accent);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-}
-
 .rh-hud-right { display: flex; gap: 6px; flex-shrink: 0; }
 
+/* ── 2행: 현재 페이지 → 목표 (탭=경로패널 토글) ── */
+.rh-hud-row2 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    height: 34px;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: rgba(255,255,255,0.025);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.rh-hud-row2:active { background: rgba(255,255,255,0.06); }
+
+.rh-hud-current {
+    font-size: 13px; font-weight: 600;
+    color: var(--rh-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 35%;
+    flex-shrink: 1;
+}
+.rh-hud-arrow {
+    font-size: 16px; color: var(--rh-border);
+    flex-shrink: 0; opacity: 0.9;
+}
+.rh-hud-goal {
+    font-size: 15px; font-weight: 800; color: var(--rh-accent);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0;
+}
+.rh-hud-path-toggle {
+    font-size: 12px; color: var(--rh-muted);
+    flex-shrink: 0; margin-left: auto;
+    transition: transform 0.2s ease;
+}
+.rh-hud-path-open .rh-hud-path-toggle { transform: rotate(180deg); }
+
+/* ── HUD 버튼 ── */
 .rh-btn {
-    padding: 5px 10px; border-radius: 6px;
+    padding: 7px 16px;
+    border-radius: 8px;
     border: 1px solid var(--rh-border);
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.07);
     color: var(--rh-text);
-    font-size: 12px; font-weight: 600; cursor: pointer;
+    font-size: 13px; font-weight: 700; cursor: pointer;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     white-space: nowrap; line-height: 1;
+    min-height: 32px;
+    display: flex; align-items: center;
     transition: background 0.15s, border-color 0.15s;
 }
-.rh-btn:active { opacity: 0.75; }
+.rh-btn:active { opacity: 0.7; }
 .rh-btn-danger {
-    background: rgba(255,77,109,0.12);
-    border-color: rgba(255,77,109,0.35);
+    background: rgba(255,77,109,0.15);
+    border-color: rgba(255,77,109,0.4);
     color: var(--rh-danger);
 }
 
@@ -91,19 +126,19 @@ body {
     position: fixed;
     top: calc(var(--rh-hud-h) + env(safe-area-inset-top));
     left: 0; right: 0;
-    background: rgba(14,21,37,0.97);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(10,16,30,0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--rh-border);
-    padding: 10px 16px;
+    padding: 12px 16px;
     overflow-x: auto; white-space: nowrap;
     z-index: 2147483646;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
 }
-.rh-path-item  { font-size: 13px; color: var(--rh-muted); }
+.rh-path-item  { font-size: 14px; color: var(--rh-muted); }
 .rh-path-cur   { color: var(--rh-primary); font-weight: 700; }
-.rh-path-arrow { color: var(--rh-border); margin: 0 4px; }
+.rh-path-arrow { color: var(--rh-border); margin: 0 5px; }
 
 /* ── 빅토리 오버레이 ─────────────────────────────────────── */
 #rh-victory {
@@ -118,59 +153,59 @@ body {
 }
 .rh-v-card {
     background: var(--rh-bg-card);
-    border-radius: 18px; border: 1px solid var(--rh-border);
+    border-radius: 20px; border: 1px solid var(--rh-border);
     padding: 28px 24px; max-width: 400px; width: 100%;
     box-shadow: 0 24px 64px rgba(0,0,0,0.8);
-    display: flex; flex-direction: column; gap: 16px;
+    display: flex; flex-direction: column; gap: 18px;
     max-height: 90vh; overflow-y: auto; box-sizing: border-box;
 }
-.rh-v-icon   { font-size: 2.8rem; text-align: center; animation: vBounce 0.5s ease 0.2s both; }
+.rh-v-icon   { font-size: 3rem; text-align: center; animation: vBounce 0.5s ease 0.2s both; }
 @keyframes vBounce {
     0%   { transform: scale(0.5); opacity: 0; }
     70%  { transform: scale(1.2); }
     100% { transform: scale(1);   opacity: 1; }
 }
 .rh-v-title {
-    font-size: 1.4rem; font-weight: 900; text-align: center;
+    font-size: 1.6rem; font-weight: 900; text-align: center;
     background: linear-gradient(120deg, #FF6B35, #FF4ECD, #38BDF8);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .rh-v-stats  { display: flex; gap: 12px; }
 .rh-v-stat   {
     flex: 1; background: rgba(255,255,255,0.04);
-    border-radius: 12px; padding: 12px; text-align: center;
+    border-radius: 14px; padding: 14px 12px; text-align: center;
     border: 1px solid var(--rh-border);
 }
 .rh-v-stat-label {
-    font-size: 10px; color: var(--rh-muted);
+    font-size: 11px; color: var(--rh-muted);
     text-transform: uppercase; letter-spacing: 0.06em;
 }
 .rh-v-stat-val {
-    font-size: 1.5rem; font-weight: 800; color: var(--rh-primary);
+    font-size: 1.7rem; font-weight: 800; color: var(--rh-primary);
     margin-top: 4px; font-variant-numeric: tabular-nums;
 }
 .rh-v-path-label {
     font-size: 10px; text-transform: uppercase;
     letter-spacing: 0.06em; color: var(--rh-muted); margin-bottom: 6px;
 }
-.rh-v-path   { font-size: 13px; color: var(--rh-text); line-height: 1.8; word-break: break-all; }
+.rh-v-path   { font-size: 14px; color: var(--rh-text); line-height: 1.9; word-break: break-all; }
 .rh-vpath-goal  { color: var(--rh-primary); font-weight: 700; }
 .rh-vpath-arrow { color: var(--rh-border); margin: 0 4px; }
 
-.rh-rank-title { font-size: 13px; font-weight: 700; color: var(--rh-text); text-align: center; margin-bottom: 8px; }
+.rh-rank-title { font-size: 14px; font-weight: 700; color: var(--rh-text); text-align: center; margin-bottom: 8px; }
 .rh-rank-row   { display: flex; gap: 8px; }
 .rh-rank-input {
     flex: 1; background: rgba(255,255,255,0.05);
-    border: 1px solid var(--rh-border); border-radius: 8px;
-    padding: 10px 12px; color: var(--rh-text);
-    font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
+    border: 1px solid var(--rh-border); border-radius: 10px;
+    padding: 11px 14px; color: var(--rh-text);
+    font-size: 15px; font-family: inherit; outline: none; box-sizing: border-box;
 }
 .rh-rank-input:focus { border-color: var(--rh-primary); }
 .rh-rank-submit {
-    padding: 10px 16px;
+    padding: 11px 18px;
     background: linear-gradient(135deg, #FF6B35, #FF4ECD);
-    color: white; border: none; border-radius: 8px;
-    font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap;
+    color: white; border: none; border-radius: 10px;
+    font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; white-space: nowrap;
     box-shadow: 0 2px 12px rgba(255,107,53,0.35);
 }
 .rh-rank-result {
@@ -178,12 +213,11 @@ body {
     color: var(--rh-primary); padding: 8px 0;
 }
 
-.rh-v-actions { display: flex; gap: 8px; }
+.rh-v-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .rh-v-btn {
-    flex: 1; padding: 12px; border-radius: 10px;
+    flex: 1; padding: 14px 12px; border-radius: 12px;
     font-weight: 700; cursor: pointer; font-family: inherit;
     font-size: 14px; border: none; transition: opacity 0.15s;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     min-height: 60px; display: flex; align-items: center; justify-content: center;
 }
 .rh-v-btn:active { opacity: 0.75; }
@@ -192,7 +226,7 @@ body {
     color: white; box-shadow: 0 4px 16px rgba(255,107,53,0.3);
 }
 .rh-v-btn-secondary {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.07);
     color: var(--rh-text); border: 1px solid var(--rh-border);
 }
 .rh-v-btn-ghost {
@@ -202,32 +236,32 @@ body {
     padding: 10px 8px; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
 }
-.rh-v-actions { flex-wrap: wrap; }
+
 /* ── 포기 확인 모달 ─────────────────────────────────────── */
 #rh-giveup-modal {
     position: fixed; inset: 0; z-index: 9999;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
 }
 #rh-giveup-modal.rh-hidden { display: none; }
 .rh-gu-card {
     background: var(--rh-bg-card);
     border: 1px solid var(--rh-border);
-    border-radius: 18px;
-    padding: 28px 24px 20px;
-    width: min(320px, 90vw);
+    border-radius: 20px;
+    padding: 28px 24px 22px;
+    width: min(340px, 90vw);
     display: flex; flex-direction: column; gap: 20px;
     box-shadow: 0 12px 48px rgba(0,0,0,0.6);
 }
 .rh-gu-title {
     font-size: 18px; font-weight: 700;
-    color: var(--rh-text); text-align: center; line-height: 1.4;
+    color: var(--rh-text); text-align: center; line-height: 1.5;
 }
 .rh-gu-actions { display: flex; flex-direction: column; gap: 10px; }
 .rh-gu-btn {
-    width: 100%; padding: 13px 16px;
-    border-radius: 10px; border: none;
-    font-size: 14px; font-weight: 600;
+    width: 100%; padding: 15px 16px;
+    border-radius: 12px; border: none;
+    font-size: 15px; font-weight: 700;
     font-family: inherit; cursor: pointer;
     transition: opacity 0.15s;
 }
@@ -237,7 +271,7 @@ body {
     color: white; box-shadow: 0 4px 16px rgba(255,107,53,0.3);
 }
 .rh-gu-btn-home {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.07);
     color: var(--rh-text); border: 1px solid var(--rh-border);
 }
 .rh-gu-btn-cancel {

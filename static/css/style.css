@@ -146,7 +146,7 @@ kbd {
 }
 
 .section-title {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -166,9 +166,9 @@ kbd {
 
 .label-badge {
     display: inline-block;
-    padding: 2px 10px;
+    padding: 3px 12px;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
@@ -222,11 +222,11 @@ kbd {
 .btn-start {
     width: 100%;
     margin-top: 10px;
-    padding: 12px;
+    padding: 14px;
     background: linear-gradient(135deg, #FF6B35, #FF4ECD);
     color: #fff;
     border-radius: var(--radius-sm);
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -519,12 +519,12 @@ kbd {
 .screen-hidden { display: none !important; }
 
 /* ── Intro buttons ───────────────────────────────────────── */
-.btn-start-big { width: 100%; padding: 14px; font-size: 1.05rem; }
+.btn-start-big { width: 100%; padding: 16px; font-size: 1.15rem; }
 .btn-leaderboard-outline {
-    display: block; width: 100%; margin-top: 0; padding: 10px;
+    display: block; width: 100%; margin-top: 0; padding: 13px;
     background: transparent; border: 1px solid var(--border);
     border-radius: var(--radius-sm); color: var(--text-muted);
-    font-size: 0.9rem; font-weight: 500; text-align: center;
+    font-size: 0.95rem; font-weight: 600; text-align: center;
     transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 .btn-leaderboard-outline:hover {
@@ -543,14 +543,16 @@ kbd {
 }
 .diff-header-title { font-size: 1rem; font-weight: 700; }
 .btn-back {
-    padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border);
-    border-radius: var(--radius-xs); color: var(--text-muted); font-size: 0.85rem;
+    padding: 9px 18px; background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-xs); color: var(--text-muted); font-size: 0.9rem;
+    font-weight: 600;
     transition: background var(--transition);
 }
 .btn-back:hover { background: var(--bg-hover); color: var(--text); }
 .btn-back-ghost {
-    padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-    border-radius: var(--radius-xs); color: var(--text-muted); font-size: 0.85rem;
+    padding: 9px 18px; background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius-xs); color: var(--text-muted); font-size: 0.9rem;
+    font-weight: 600;
     transition: background var(--transition), color var(--transition);
 }
 .btn-back-ghost:hover { background: var(--bg-input); color: var(--text); }
@@ -561,8 +563,8 @@ kbd {
 .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .diff-card {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 14px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 20px 12px;
     background: var(--bg-card); border: 2px solid var(--border);
     border-radius: var(--radius); text-align: center;
     transition: transform var(--transition), border-color var(--transition),
@@ -578,9 +580,9 @@ kbd {
 .diff-hard:hover,      .diff-hard:focus      { border-color: #FF6B35; background: rgba(255,107,53,0.07); }
 .diff-very-hard:hover, .diff-very-hard:focus { border-color: #FF4D6D; background: rgba(255,77,109,0.07); }
 
-.diff-card-icon   { font-size: 1.5rem; line-height: 1; }
-.diff-card-name   { font-size: 1rem; font-weight: 800; color: var(--text); }
-.diff-card-detail { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+.diff-card-icon   { font-size: 2rem; line-height: 1; }
+.diff-card-name   { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+.diff-card-detail { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
 /* ── Custom card ─────────────────────────────────────────── */
 .custom-card .setup-arrow { text-align: center; color: var(--text-dim); font-size: 1.2rem; padding: 6px 0; }
@@ -595,9 +597,9 @@ kbd {
 }
 .lb-tabs::-webkit-scrollbar { display: none; }
 .lb-tab {
-    padding: 8px 14px; background: transparent; border: none;
+    padding: 9px 16px; background: transparent; border: none;
     border-bottom: 2px solid transparent; color: var(--text-muted);
-    font-size: 0.83rem; font-weight: 500; white-space: nowrap;
+    font-size: 0.88rem; font-weight: 500; white-space: nowrap;
     cursor: pointer; margin-bottom: -1px;
     transition: color var(--transition), border-color var(--transition);
 }
@@ -689,7 +691,7 @@ kbd {
     color: var(--accent); font-weight: 700; font-size: 0.85rem;
 }
 .lb-entry-route {
-    font-size: 0.78rem; color: var(--text-dim);
+    font-size: 0.82rem; color: var(--text-dim);
     padding-left: 38px; line-height: 1.5; word-break: break-all;
 }
 .lb-diff {
@@ -724,8 +726,8 @@ kbd {
 .wiki-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
 .wiki-card {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 18px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 22px 12px;
     background: var(--bg-card); border: 2px solid var(--border);
     border-radius: var(--radius); cursor: pointer;
     transition: border-color var(--transition), background var(--transition),
@@ -742,9 +744,9 @@ kbd {
     background: rgba(255,107,53,0.1) !important;
     box-shadow: 0 0 0 3px rgba(255,107,53,0.15) !important;
 }
-.wiki-flag { font-size: 1.8rem; line-height: 1; }
-.wiki-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
-.wiki-lang { font-size: 0.7rem; color: var(--text-muted); }
+.wiki-flag { font-size: 2.2rem; line-height: 1; }
+.wiki-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+.wiki-lang { font-size: 0.75rem; color: var(--text-muted); }
 
 /* ── 높이 기반 반응형 — 작은 화면에서 추가 압축 ───────────── */
 @media (max-height: 720px) {
@@ -757,10 +759,12 @@ kbd {
     .hero-title { font-size: clamp(1.5rem, 5vw, 2.4rem); margin-bottom: 4px; }
     .index-page .container { gap: 8px; padding-top: 8px; }
     .card { padding: 12px 14px; }
-    .diff-card { padding: 10px 8px; }
+    .diff-card { padding: 14px 10px; }
     .diff-grid { gap: 8px; }
-    .diff-card-icon { font-size: 1.2rem; }
+    .diff-card-icon { font-size: 1.6rem; }
     .section-title { margin-bottom: 6px; }
+    .wiki-card { padding: 16px 10px; }
+    .wiki-flag { font-size: 1.9rem; }
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
