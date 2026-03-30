@@ -8,7 +8,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from html import escape as html_escape
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from urllib.parse import quote, unquote
 
 import threading
@@ -27,6 +27,10 @@ except ImportError:
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'namu-speedrun-secret-key-2024')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/x-icon')
 
 import subprocess as _subprocess
 try:
