@@ -32,6 +32,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'namu-speedrun-secret-key-2024')
 def favicon():
     return send_from_directory(app.static_folder, 'favicon.ico', mimetype='image/x-icon')
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
 import subprocess as _subprocess
 try:
     _APP_VER = _subprocess.check_output(
