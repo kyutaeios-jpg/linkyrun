@@ -152,6 +152,30 @@ WIKI_CONFIGS = {
         'link_selector': 'a[href^="/wiki/"]',
         'wp_excluded':   ['Wikipedia:', 'ウィキペディア:', 'ノート:', '利用者:', '特別:', 'ヘルプ:', 'Portal:', 'ファイル:', 'カテゴリ:', 'Template:'],
     },
+    'es': {
+        'name':          'Wikipedia (Español)',
+        'base_url':      'https://es.wikipedia.org/wiki/',
+        'host':          'es.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipedia:', 'Discusión:', 'Usuario:', 'Especial:', 'Ayuda:', 'Portal:', 'Archivo:', 'Categoría:', 'Plantilla:'],
+    },
+    'pt': {
+        'name':          'Wikipédia (Português)',
+        'base_url':      'https://pt.wikipedia.org/wiki/',
+        'host':          'pt.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipédia:', 'Discussão:', 'Usuário:', 'Especial:', 'Ajuda:', 'Portal:', 'Ficheiro:', 'Categoria:', 'Predefinição:'],
+    },
+    'it': {
+        'name':          'Wikipedia (Italiano)',
+        'base_url':      'https://it.wikipedia.org/wiki/',
+        'host':          'it.wikipedia.org',
+        'link_prefix':   '/wiki/',
+        'link_selector': 'a[href^="/wiki/"]',
+        'wp_excluded':   ['Wikipedia:', 'Discussione:', 'Utente:', 'Speciale:', 'Aiuto:', 'Portale:', 'File:', 'Categoria:', 'Template:'],
+    },
 }
 
 # ── Wikipedia 위키별 난이도 페이지 풀 ──────────────────────────
@@ -278,6 +302,81 @@ WIKI_PAGES_BY_DIFFICULTY = {
             "認識論", "現象学",
         ],
     },
+    'es': {
+        'easy': [
+            "España", "Madrid", "Barcelona", "México", "Argentina", "Colombia",
+            "Estados Unidos", "Francia", "Alemania", "Italia", "Brasil",
+            "Matemáticas", "Física", "Química", "Música", "Cine", "Fútbol",
+            "Juegos Olímpicos", "Internet", "Computadora", "Gato", "Perro",
+            "Albert Einstein", "Napoleón Bonaparte",
+        ],
+        'medium': [
+            "Segunda Guerra Mundial", "Primera Guerra Mundial", "Guerra Fría",
+            "Revolución francesa", "Revolución industrial",
+            "Sistema solar", "Agujero negro", "Evolución biológica", "Cambio climático",
+            "Democracia", "Capitalismo", "Budismo", "Islam",
+        ],
+        'hard': [
+            "Imperio bizantino", "Imperio otomano", "República romana",
+            "Renacimiento", "Ilustración", "Mecánica cuántica", "Relatividad general",
+            "Tabla periódica de los elementos", "ADN", "Immanuel Kant",
+        ],
+        'very_hard': [
+            "Escolástica", "Neoplatonismo", "Empirismo", "Racionalismo",
+            "Topología", "Teoría de números", "Termodinámica", "Electromagnetismo",
+            "Epistemología", "Fenomenología",
+        ],
+    },
+    'pt': {
+        'easy': [
+            "Portugal", "Lisboa", "Brasil", "São Paulo", "Rio de Janeiro",
+            "Estados Unidos", "França", "Alemanha", "Espanha", "Itália",
+            "Matemática", "Física", "Química", "Música", "Cinema", "Futebol",
+            "Jogos Olímpicos", "Internet", "Computador", "Gato", "Cão",
+            "Albert Einstein", "Napoleão Bonaparte",
+        ],
+        'medium': [
+            "Segunda Guerra Mundial", "Primeira Guerra Mundial", "Guerra Fria",
+            "Revolução Francesa", "Revolução Industrial",
+            "Sistema Solar", "Buraco negro", "Evolução", "Mudança do clima",
+            "Democracia", "Capitalismo", "Budismo", "Islão",
+        ],
+        'hard': [
+            "Império Bizantino", "Império Otomano", "República Romana",
+            "Renascimento", "Iluminismo", "Mecânica quântica", "Relatividade geral",
+            "Tabela periódica", "ADN", "Immanuel Kant",
+        ],
+        'very_hard': [
+            "Escolástica", "Neoplatonismo", "Empirismo", "Racionalismo",
+            "Topologia", "Teoria dos números", "Termodinâmica", "Eletromagnetismo",
+            "Epistemologia", "Fenomenologia",
+        ],
+    },
+    'it': {
+        'easy': [
+            "Italia", "Roma", "Milano", "Firenze", "Napoli",
+            "Stati Uniti d'America", "Francia", "Germania", "Spagna", "Brasile",
+            "Matematica", "Fisica", "Chimica", "Musica", "Cinema", "Calcio (sport)",
+            "Giochi olimpici", "Internet", "Computer", "Gatto", "Cane",
+            "Albert Einstein", "Napoleone Bonaparte",
+        ],
+        'medium': [
+            "Seconda guerra mondiale", "Prima guerra mondiale", "Guerra fredda",
+            "Rivoluzione francese", "Rivoluzione industriale",
+            "Sistema solare", "Buco nero", "Evoluzione", "Cambiamento climatico",
+            "Democrazia", "Capitalismo", "Buddhismo", "Islam",
+        ],
+        'hard': [
+            "Impero bizantino", "Impero ottomano", "Repubblica romana",
+            "Rinascimento", "Illuminismo", "Meccanica quantistica", "Relatività generale",
+            "Tavola periodica degli elementi", "DNA", "Immanuel Kant",
+        ],
+        'very_hard': [
+            "Scolastica (filosofia)", "Neoplatonismo", "Empirismo", "Razionalismo",
+            "Topologia", "Teoria dei numeri", "Termodinamica", "Elettromagnetismo",
+            "Epistemologia", "Fenomenologia",
+        ],
+    },
 }
 
 POPULAR_PAGES = [
@@ -324,6 +423,9 @@ WIKI_DIFFICULTY_THRESHOLDS = {
     'de':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
     'fr':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
     'ja':   [(400, 'easy'), (120, 'medium'), (40, 'hard'), (10, 'very_hard')],
+    'es':   [(400, 'easy'), (100, 'medium'), (35, 'hard'), (10, 'very_hard')],
+    'pt':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
+    'it':   [(300, 'easy'), (90,  'medium'), (30, 'hard'), (10, 'very_hard')],
 }
 # 유효한 목표 페이지의 최소 역링크 수 (이 미만이면 목표로 사용하지 않음)
 MIN_GOAL_BACKLINKS = 10
@@ -1533,6 +1635,9 @@ WIKI_RANDOM_URLS = {
     'de': 'https://de.wikipedia.org/wiki/Special:Random',
     'fr': 'https://fr.wikipedia.org/wiki/Special:Random',
     'ja': 'https://ja.wikipedia.org/wiki/Special:Random',
+    'es': 'https://es.wikipedia.org/wiki/Special:Random',
+    'pt': 'https://pt.wikipedia.org/wiki/Special:Random',
+    'it': 'https://it.wikipedia.org/wiki/Special:Random',
 }
 
 
