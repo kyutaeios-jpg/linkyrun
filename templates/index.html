@@ -463,42 +463,6 @@
                 </div>
             </div>
 
-            <!-- 직접 입력 -->
-            <div class="card custom-card">
-                <div class="section-title" data-i18n="customTitle">직접 설정</div>
-                <div class="input-group">
-                    <label class="input-label">
-                        <span class="label-badge start-badge" data-i18n="labelStart">시작</span>
-                    </label>
-                    <div class="input-row">
-                        <input type="text" id="start-input" class="text-input"
-                               data-i18n-placeholder="placeholderPage"
-                               placeholder="페이지 이름"
-                               autocomplete="off" spellcheck="false"
-                               list="page-suggestions">
-                        <button class="btn-random" id="start-random" data-i18n-title="labelStart" title="랜덤">🎲</button>
-                    </div>
-                </div>
-                <div class="setup-arrow">↓</div>
-                <div class="input-group">
-                    <label class="input-label">
-                        <span class="label-badge goal-badge" data-i18n="labelGoal">목표</span>
-                    </label>
-                    <div class="input-row">
-                        <input type="text" id="goal-input" class="text-input"
-                               data-i18n-placeholder="placeholderPage"
-                               placeholder="페이지 이름"
-                               autocomplete="off" spellcheck="false"
-                               list="page-suggestions">
-                        <button class="btn-random" id="goal-random" data-i18n-title="labelGoal" title="랜덤">🎲</button>
-                    </div>
-                </div>
-                <button class="btn-start" id="btn-custom-start">
-                    <span class="btn-start-text" data-i18n="btnCustomStart">게임 시작</span>
-                    <span class="btn-start-icon">▶</span>
-                </button>
-            </div>
-
             <datalist id="page-suggestions"></datalist>
 
         </main>
@@ -729,12 +693,6 @@
                 if (card) card.disabled = false;
                 alert(t('alertLoadFail'));
             }
-        }
-
-        function randomPage(inputId) {
-            const pages = WIKI_ALL_PAGES[selectedWiki] || WIKI_ALL_PAGES['namu'];
-            if (!pages || pages.length === 0) return;
-            document.getElementById(inputId).value = pages[Math.floor(Math.random() * pages.length)];
         }
 
         /* ── 랭킹 모달 ──────────────────────────── */
@@ -1027,20 +985,6 @@
                 card.addEventListener('click', () => startByDifficulty(card.dataset.difficulty));
             });
 
-            document.getElementById('start-random').addEventListener('click', () => randomPage('start-input'));
-            document.getElementById('goal-random').addEventListener('click', () => randomPage('goal-input'));
-            document.getElementById('btn-custom-start').addEventListener('click', () => {
-                const start = document.getElementById('start-input').value.trim();
-                const goal  = document.getElementById('goal-input').value.trim();
-                if (!start) { alert(t('alertNoStart')); return; }
-                if (!goal)  { alert(t('alertNoGoal'));  return; }
-                launchGame(start, goal, 'custom');
-            });
-            document.querySelectorAll('#start-input, #goal-input').forEach(inp => {
-                inp.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') document.getElementById('btn-custom-start').click();
-                });
-            });
 
             document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard('daily'));
             document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard('daily'));
