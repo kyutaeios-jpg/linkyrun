@@ -130,6 +130,9 @@ window.I18N = {
             `📅 Linky Run — Day ${day}\n${gs.start} → ${gs.goal}\n⏱ ${time}  🔗 ${gs.hops}회\n경로: ${(gs.path||[]).join(' → ')}\n🌐 ${window.location.origin}`,
     },
 
+    /* ko는 namu와 동일한 한국어 번역 사용 */
+    get ko() { return this.namu; },
+
     en: {
         subtitle:         'Follow links to reach the goal page',
         howToPlay:        'How to Play',
@@ -937,13 +940,13 @@ window.I18N = {
 };
 
 /* ── Current wiki (set by each page) ─────────────────────── */
-window._WIKI = 'namu';
+window._WIKI = 'ko';
 
-/** Translate key for the current wiki (falls back to namu). */
+/** Translate key for the current wiki (falls back to ko). */
 window.t = function (key) {
-    const d = window.I18N[window._WIKI] || window.I18N['namu'];
+    const d = window.I18N[window._WIKI] || window.I18N['ko'] || window.I18N['namu'];
     if (key in d) return d[key];
-    return window.I18N['namu'][key] ?? key;
+    return (window.I18N['ko'] || window.I18N['namu'])[key] ?? key;
 };
 
 /** Apply data-i18n* attributes throughout the document. */

@@ -113,7 +113,7 @@
 
     window.rhGiveUpGoal = function () {
         const goal = gs ? gs.goal : (typeof GOAL !== 'undefined' ? GOAL : null);
-        const wiki = gs ? (gs.wiki || 'namu') : (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        const wiki = gs ? (gs.wiki || 'ko') : (typeof WIKI !== 'undefined' ? WIKI : 'ko');
         if (gs && gs.active) _recordGiveUp(gs.difficulty || 'unknown');
         clear();
         if (goal) {
@@ -185,12 +185,12 @@
                     nickname: nick, start: gs.start, goal: gs.goal,
                     elapsed_ms: Math.round(elapsed), hops: gs.hops,
                     path: gs.path, difficulty: gs.difficulty || 'unknown',
-                    wiki: gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu')
+                    wiki: gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'ko')
                 })
             });
             const d = await res.json();
             if (!d.ok) throw new Error(d.error);
-            const wikiParam = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+            const wikiParam = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'ko');
             const rk = await fetch(`/api/ranking?wiki=${encodeURIComponent(wikiParam)}&difficulty=${encodeURIComponent(gs.difficulty || '')}&limit=50`).then(r => r.json());
             const rank = rk.rankings.findIndex(r => r.id === d.id) + 1;
             const row = document.getElementById('rh-rank-row');
@@ -219,7 +219,7 @@
     /* ── 도전장 보내기 ───────────────────────────────────── */
     window.rhChallengeFriend = async function () {
         if (!gs) return;
-        const wiki    = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'namu');
+        const wiki    = gs.wiki || (typeof WIKI !== 'undefined' ? WIKI : 'ko');
         const elapsed = gs.elapsed || (Date.now() - gs.startTime);
         const hops    = gs.hops;
 
@@ -298,7 +298,7 @@
 
         if (wikiTitle) {
             e.preventDefault();
-            const currentWiki = typeof WIKI !== 'undefined' ? WIKI : 'namu';
+            const currentWiki = typeof WIKI !== 'undefined' ? WIKI : 'ko';
             const currentGoal = typeof GOAL !== 'undefined' ? GOAL : '';
             if (gs && gs.active) {
                 gs.hops++;

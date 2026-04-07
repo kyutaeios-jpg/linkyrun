@@ -291,7 +291,7 @@
             <div class="lang-selector">
                 <button class="lang-btn" id="lang-btn">🌐 <span id="lang-btn-label">한국어</span></button>
                 <div class="lang-dropdown hidden" id="lang-dropdown">
-                    <button class="lang-option" data-lang="namu">🇰🇷 한국어</button>
+                    <button class="lang-option" data-lang="ko">🇰🇷 한국어</button>
                     <button class="lang-option" data-lang="en">🇺🇸 English</button>
                     <button class="lang-option" data-lang="de">🇩🇪 Deutsch</button>
                     <button class="lang-option" data-lang="fr">🇫🇷 Français</button>
@@ -370,11 +370,6 @@
         <main class="container diff-container">
             <div class="card">
                 <div class="wiki-cards">
-                    <button class="wiki-card" data-wiki="namu">
-                        <span class="wiki-card-flag">🌲</span>
-                        <span class="wiki-card-name">나무위키</span>
-                        <span class="wiki-card-desc">한국어</span>
-                    </button>
                     <button class="wiki-card" data-wiki="ko">
                         <span class="wiki-card-flag">🇰🇷</span>
                         <span class="wiki-card-name">위키백과</span>
@@ -478,8 +473,7 @@
                 <button class="modal-close" id="close-leaderboard">✕</button>
             </div>
             <div class="lb-wiki-tabs" id="lb-wiki-tabs">
-                <button class="lb-wiki-tab lb-wiki-tab-active" data-lbwiki="namu">🌲 나무</button>
-                <button class="lb-wiki-tab" data-lbwiki="ko">🇰🇷 위키</button>
+                <button class="lb-wiki-tab lb-wiki-tab-active" data-lbwiki="ko">🇰🇷 위키</button>
                 <button class="lb-wiki-tab" data-lbwiki="en">🇺🇸 EN</button>
                 <button class="lb-wiki-tab" data-lbwiki="de">🇩🇪 DE</button>
                 <button class="lb-wiki-tab" data-lbwiki="fr">🇫🇷 FR</button>
@@ -550,12 +544,12 @@
 
         /* ── UI 언어 선택 (별도 — 게임 위키와 무관) ─── */
         const LANG_LABELS = {
-            namu: '한국어', en: 'English', de: 'Deutsch',
+            ko: '한국어', en: 'English', de: 'Deutsch',
             fr: 'Français', ja: '日本語',
         };
-        const DEVICE_LANG_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        const DEVICE_LANG_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
         const deviceCode = (navigator.language || 'ko').split('-')[0].toLowerCase();
-        let selectedLang = DEVICE_LANG_MAP[deviceCode] || 'namu';
+        let selectedLang = DEVICE_LANG_MAP[deviceCode] || 'ko';
 
         function setLang(lang) {
             selectedLang = lang;
@@ -586,11 +580,11 @@
         });
 
         /* ── 게임 위키 선택 (별도 — UI 언어와 무관) ─── */
-        const DEVICE_WIKI_MAP = { ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
-        let selectedWiki = DEVICE_WIKI_MAP[deviceCode] || 'namu';
+        const DEVICE_WIKI_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        let selectedWiki = DEVICE_WIKI_MAP[deviceCode] || 'ko';
 
         const WIKI_BADGE_LABELS = {
-            namu: '나무위키', ko: '위키백과',
+            ko: '위키백과',
             en: 'Wikipedia (EN)', de: 'Wikipedia (DE)',
             fr: 'Wikipédia (FR)', ja: 'ウィキペディア',
         };
@@ -604,8 +598,6 @@
             const badge = document.getElementById('wiki-badge');
             if (badge) badge.textContent = WIKI_BADGE_LABELS[wiki] || wiki;
             updateDatalist(wiki);
-            document.getElementById('start-input').value = '';
-            document.getElementById('goal-input').value = '';
         }
 
         document.querySelectorAll('.wiki-card').forEach(el => {
@@ -621,7 +613,7 @@
         function updateDatalist(wiki) {
             const dl = document.getElementById('page-suggestions');
             dl.innerHTML = '';
-            (WIKI_ALL_PAGES[wiki] || WIKI_ALL_PAGES['namu']).forEach(p => {
+            (WIKI_ALL_PAGES[wiki] || WIKI_ALL_PAGES['ko'] || []).forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p;
                 dl.appendChild(opt);
@@ -697,7 +689,7 @@
 
         /* ── 랭킹 모달 ──────────────────────────── */
         let activeLbDifficulty = 'daily';
-        let activeLbWiki = 'namu';
+        let activeLbWiki = 'ko';
 
         function openLeaderboard(difficulty) {
             document.body.style.overflow = 'hidden';
@@ -798,7 +790,7 @@
             if (!card) return;
             card.style.display = '';
             try {
-                const res  = await fetch(`/api/daily?wiki=${encodeURIComponent(wiki || 'namu')}`);
+                const res  = await fetch(`/api/daily?wiki=${encodeURIComponent(wiki || 'ko')}`);
                 _dailyData = await res.json();
                 if (dayEl) dayEl.textContent = t('dailyDay')(_dailyData.day);
                 if (routeEl) routeEl.innerHTML =
@@ -926,7 +918,7 @@
         }
 
         /* ── 랭킹 도전 시트 ────────────────────── */
-        let _csWiki = 'namu';
+        let _csWiki = 'ko';
         function openChallengeSheet(el) {
             const start  = decodeURIComponent(el.dataset.start);
             const goal   = decodeURIComponent(el.dataset.goal);
@@ -958,7 +950,7 @@
                     .then(r => r.ok ? r.json() : null)
                     .then(data => {
                         if (data && data.start && data.goal) {
-                            showChallengeBanner(data.start, data.goal, data.wiki || 'namu', data.hops, data.ms);
+                            showChallengeBanner(data.start, data.goal, data.wiki || 'ko', data.hops, data.ms);
                         }
                     })
                     .catch(() => {});
@@ -1013,7 +1005,7 @@
             detectChallengeBanner();
 
             // 데일리 카드 로드 (나무위키만)
-            loadDailyChallenge('namu');
+            loadDailyChallenge('ko');
         });
     </script>
 
