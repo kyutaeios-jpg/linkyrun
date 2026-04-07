@@ -898,6 +898,30 @@
             const descEl    = document.getElementById('challenge-banner-desc');
             const acceptBtn = document.getElementById('challenge-accept-btn');
             if (!banner) return;
+
+            // 나무위키 도전장은 웹에서 지원하지 않음 → 앱 설치 안내
+            if (wiki === 'namu') {
+                if (titleEl) titleEl.textContent = '📱 앱에서만 플레이 가능';
+                if (descEl) {
+                    const routeLine = `${start} → ${goal}`;
+                    const recordLine = (hops && ms)
+                        ? `상대 기록: ⏱ ${fmtMs(ms)}  🔗 ${hops}홉`
+                        : '';
+                    descEl.innerHTML = esc(routeLine) +
+                        (recordLine ? `<br><span style="color:var(--accent,#FF6B35);font-weight:700">${esc(recordLine)}</span>` : '') +
+                        '<br><span style="color:#7B8FAD;font-size:0.85rem">나무위키 도전은 앱에서만 가능합니다</span>';
+                }
+                banner.style.display = '';
+                if (acceptBtn) {
+                    acceptBtn.textContent = '앱 다운로드';
+                    acceptBtn.onclick = () => {
+                        window.open('https://play.google.com/store/apps/details?id=com.linkyrun.app', '_blank');
+                    };
+                }
+                window.history.replaceState({}, '', '/');
+                return;
+            }
+
             if (titleEl) titleEl.textContent = t('challengeBannerTitle');
             if (descEl) {
                 const routeLine = `${start} → ${goal}`;
