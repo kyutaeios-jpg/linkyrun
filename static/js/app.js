@@ -198,6 +198,7 @@ async function submitRank() {
                 path:       gameState.path,
                 difficulty: gameState.difficulty || 'unknown',
                 wiki:       gameState.wiki || window._GAME_WIKI || 'namu',
+                ...(gameState.dayNum ? { day_num: gameState.dayNum } : {}),
             }),
         });
         const data = await res.json();

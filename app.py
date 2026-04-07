@@ -685,6 +685,11 @@ def init_db():
                 _execute(conn, "ALTER TABLE rankings ADD COLUMN wiki TEXT NOT NULL DEFAULT 'namu'")
             except Exception:
                 pass
+        # day_num 컬럼 추가 (데일리 랭킹 일별 초기화용)
+        try:
+            _execute(conn, "ALTER TABLE rankings ADD COLUMN day_num INTEGER")
+        except Exception:
+            pass
 
 def _gen_challenge_code(length=6):
     chars = string.ascii_letters + string.digits
@@ -1798,24 +1803,34 @@ def api_ranking():
             return jsonify({'error': 'nickname required'}), 400
 
         wiki_val = str(data.get('wiki', 'namu'))
+        difficulty_val = str(data.get('difficulty', 'unknown'))
+        # 데일리 챌린지: day_num 저장 (클라이언트가 보내지 않으면 서버에서 계산)
+        day_num_val = None
+        if difficulty_val == 'daily':
+            day_num_val = data.get('day_num')
+            if day_num_val is None:
+                day_num_val = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+            day_num_val = int(day_num_val)
+
         ph = _ph()
         if _USE_PG:
             insert_sql = f'''INSERT INTO rankings
-               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
-               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph}) RETURNING id'''
+               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at, day_num)
+               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph}) RETURNING id'''
         else:
             insert_sql = f'''INSERT INTO rankings
-               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at)
-               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})'''
+               (nickname, start_page, goal_page, elapsed_ms, hops, path, difficulty, wiki, created_at, day_num)
+               VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})'''
         params = (nickname,
                   str(data.get('start', '')),
                   str(data.get('goal', '')),
                   int(data.get('elapsed_ms', 0)),
                   int(data.get('hops', 0)),
                   json.dumps(data.get('path', [])),
-                  str(data.get('difficulty', 'unknown')),
+                  difficulty_val,
                   wiki_val,
-                  datetime.utcnow().isoformat())
+                  datetime.utcnow().isoformat(),
+                  day_num_val)
         with _db_conn() as conn:
             cur = _execute(conn, insert_sql, params)
             if _USE_PG:
@@ -1840,6 +1855,11 @@ def api_ranking():
         if wiki_filter:
             conditions.append(f'wiki = {ph}')
             params.append(wiki_filter)
+        # 데일리 랭킹: 오늘의 day_num으로 필터링 (매일 초기화)
+        if difficulty == 'daily':
+            today_day_num = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+            conditions.append(f'day_num = {ph}')
+            params.append(today_day_num)
         where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
         params.append(limit)
         cur = _execute(conn,
