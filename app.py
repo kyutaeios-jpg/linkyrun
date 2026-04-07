@@ -1940,6 +1940,23 @@ def api_challenge_get(code):
     return jsonify({'start': row[0], 'goal': row[1], 'wiki': row[2], 'hops': row[3], 'ms': row[4]})
 
 
+@app.route('/go/<code>')
+def go_smart_link(code):
+    """스마트 링크: Android→앱/스토어, iOS·기타→웹으로 분기."""
+    ua = request.headers.get('User-Agent', '').lower()
+    web_url = f'https://linkyrun.com/?c={code}'
+    if 'android' in ua:
+        # Android: Intent URL로 앱 실행 시도, 실패 시 Play Store로
+        intent_url = (
+            f'intent://linkyrun.com/go/{code}'
+            f'#Intent;scheme=https;package=com.linkyrun.app;'
+            f'S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.linkyrun.app;end'
+        )
+        return redirect(intent_url)
+    # iOS 및 기타: 웹으로
+    return redirect(web_url)
+
+
 @app.route('/api/health')
 def api_health():
     """서버 상태 및 Playwright 동작 여부 확인."""
