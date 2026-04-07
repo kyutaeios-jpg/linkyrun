@@ -8,7 +8,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from html import escape as html_escape
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect
 from urllib.parse import quote, unquote
 
 import threading
