@@ -40,6 +40,10 @@ def privacy():
 def app_ads_txt():
     return 'google.com, pub-4723026681968956, DIRECT, f08c47fec0942fa0\n', 200, {'Content-Type': 'text/plain'}
 
+@app.route('/ads.txt')
+def ads_txt():
+    return 'google.com, pub-4723026681968956, DIRECT, f08c47fec0942fa0\n', 200, {'Content-Type': 'text/plain'}
+
 import subprocess as _subprocess
 try:
     _APP_VER = _subprocess.check_output(
