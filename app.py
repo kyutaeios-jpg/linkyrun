@@ -690,6 +690,22 @@ def init_db():
             _execute(conn, "ALTER TABLE rankings ADD COLUMN day_num INTEGER")
         except Exception:
             pass
+        # 기존 데일리 기록에 day_num backfill (created_at 날짜 기반)
+        try:
+            if _USE_PG:
+                _execute(conn, """
+                    UPDATE rankings
+                    SET day_num = (DATE(created_at) - DATE '2024-01-01') + 1
+                    WHERE difficulty = 'daily' AND day_num IS NULL
+                """)
+            else:
+                _execute(conn, """
+                    UPDATE rankings
+                    SET day_num = CAST(julianday(substr(created_at,1,10)) - julianday('2024-01-01') + 1 AS INTEGER)
+                    WHERE difficulty = 'daily' AND day_num IS NULL
+                """)
+        except Exception:
+            pass
 
 def _gen_challenge_code(length=6):
     chars = string.ascii_letters + string.digits
