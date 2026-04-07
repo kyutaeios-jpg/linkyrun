@@ -695,7 +695,7 @@ def init_db():
             if _USE_PG:
                 _execute(conn, """
                     UPDATE rankings
-                    SET day_num = (DATE(created_at) - DATE '2024-01-01') + 1
+                    SET day_num = (created_at::DATE - DATE '2024-01-01') + 1
                     WHERE difficulty = 'daily' AND day_num IS NULL
                 """)
             else:

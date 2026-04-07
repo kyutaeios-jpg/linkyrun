@@ -524,11 +524,11 @@
                 <button class="lb-wiki-tab" data-lbwiki="it">🇮🇹 IT</button>
             </div>
             <div class="lb-tabs">
-                <button class="lb-tab lb-tab-active" data-difficulty="easy" data-i18n="tabEasy">🟢 쉬움</button>
+                <button class="lb-tab lb-tab-active" data-difficulty="daily" data-i18n="tabDaily">📅 데일리</button>
+                <button class="lb-tab" data-difficulty="easy" data-i18n="tabEasy">🟢 쉬움</button>
                 <button class="lb-tab" data-difficulty="medium" data-i18n="tabMedium">🟡 보통</button>
                 <button class="lb-tab" data-difficulty="hard" data-i18n="tabHard">🟠 어려움</button>
                 <button class="lb-tab" data-difficulty="very_hard" data-i18n="tabVeryHard">🔴 매우 어려움</button>
-                <button class="lb-tab" data-difficulty="daily" data-i18n="tabDaily">📅 데일리</button>
             </div>
             <div id="lb-content" class="lb-content">
                 <div class="lb-empty" data-i18n="lbSelect">탭을 선택해서 랭킹을 확인하세요</div>
@@ -737,7 +737,7 @@
         }
 
         /* ── 랭킹 모달 ──────────────────────────── */
-        let activeLbDifficulty = 'easy';
+        let activeLbDifficulty = 'daily';
         let activeLbWiki = 'namu';
 
         function openLeaderboard(difficulty) {
@@ -1041,8 +1041,8 @@
                 });
             });
 
-            document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard('easy'));
-            document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard('easy'));
+            document.getElementById('btn-open-lb-intro').addEventListener('click', () => openLeaderboard('daily'));
+            document.getElementById('btn-open-lb-diff').addEventListener('click', () => openLeaderboard('daily'));
             document.getElementById('close-leaderboard').addEventListener('click', closeLeaderboard);
             document.getElementById('leaderboard-modal').addEventListener('click', e => {
                 if (e.target.id === 'leaderboard-modal') closeLeaderboard();
