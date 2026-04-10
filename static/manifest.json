@@ -1,7 +1,7 @@
 {
-    "name": "Linky Run",
-    "short_name": "Linky Run",
-    "description": "나무위키 링크를 타고 목표 페이지까지 도달하는 게임",
+    "name": "링키런 (Linky Run)",
+    "short_name": "링키런",
+    "description": "링키런 — 위키 링크를 타고 목표 페이지까지 도달하는 게임",
     "start_url": "/",
     "display": "standalone",
     "orientation": "any",
