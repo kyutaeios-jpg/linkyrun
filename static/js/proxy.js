@@ -262,11 +262,17 @@
         'de.wikipedia.org':   '/wiki/',
         'fr.wikipedia.org':   '/wiki/',
         'ja.wikipedia.org':   '/wiki/',
+        'es.wikipedia.org':   '/wiki/',
+        'pt.wikipedia.org':   '/wiki/',
+        'it.wikipedia.org':   '/wiki/',
         'ko.m.wikipedia.org': '/wiki/',
         'en.m.wikipedia.org': '/wiki/',
         'de.m.wikipedia.org': '/wiki/',
         'fr.m.wikipedia.org': '/wiki/',
         'ja.m.wikipedia.org': '/wiki/',
+        'es.m.wikipedia.org': '/wiki/',
+        'pt.m.wikipedia.org': '/wiki/',
+        'it.m.wikipedia.org': '/wiki/',
     };
 
     // 링크 클릭 처리 — 이미 프록시된 /page/ 링크와 미처리 위키 링크 모두 처리

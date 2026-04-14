@@ -1,4 +1,8 @@
 'use strict';
+// NOTE: 이 파일은 page.html (폴백 링크 목록 UI) 전용입니다.
+// 프록시 페이지(build_proxy_html)는 proxy.js를 사용합니다.
+// 두 파일에 타이머·HUD·승리 로직이 중복되어 있습니다.
+// TODO: 공통 로직을 shared 모듈로 추출하여 중복 제거
 
 /* ── Constants ─────────────────────────────────────────────── */
 const STORAGE_KEY = 'namuSpeedrun';

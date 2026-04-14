@@ -19,7 +19,7 @@
         (function () {
             const p = new URLSearchParams(location.search).get('wiki') || 'namu';
             // 위키 키를 i18n 언어 키로 변환 (ko → namu)
-            const WIKI_TO_LANG = { namu: 'namu', ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+            const WIKI_TO_LANG = { namu: 'namu', ko: 'namu', en: 'en', de: 'de', fr: 'fr', ja: 'ja', es: 'es', pt: 'pt', it: 'it' };
             window._WIKI = WIKI_TO_LANG[p] || 'namu';
             window._GAME_WIKI = p;
         }());

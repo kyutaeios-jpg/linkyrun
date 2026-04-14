@@ -1,11 +1,11 @@
-const CACHE_NAME = 'namu-speedrun-v3';
+const CACHE_NAME = 'linkyrun-v4';
 const STATIC_ASSETS = [
     '/',
-    '/static/css/style.css',
-    '/static/js/app.js',
     '/static/manifest.json',
     '/static/icon.svg',
 ];
+// CSS/JS는 ?v= 쿼리스트링으로 캐시 무효화되므로 SW precache에서 제외.
+// 대신 아래 fetch 핸들러의 cache-first 전략으로 자동 캐싱됨.
 
 self.addEventListener('install', event => {
     event.waitUntil(

@@ -505,7 +505,7 @@
     ══════════════════════════════════════════ -->
     <div id="challenge-sheet-overlay" class="challenge-sheet-overlay" hidden onclick="closeChallengeSheet()">
         <div class="challenge-sheet" onclick="event.stopPropagation()">
-            <div class="challenge-sheet-label">도전하기</div>
+            <div class="challenge-sheet-label" data-i18n="btnCustomStart">도전하기</div>
             <div class="challenge-sheet-route">
                 <span class="challenge-sheet-start" id="cs-start">—</span>
                 <span class="challenge-sheet-arrow">→</span>
@@ -513,8 +513,8 @@
             </div>
             <div class="challenge-sheet-record" id="cs-record"></div>
             <div class="challenge-sheet-actions">
-                <button class="challenge-sheet-btn-start" id="cs-btn-start" onclick="confirmChallengeSheet()">도전 시작 ▶</button>
-                <button class="challenge-sheet-btn-cancel" onclick="closeChallengeSheet()">취소</button>
+                <button class="challenge-sheet-btn-start" id="cs-btn-start" onclick="confirmChallengeSheet()" data-i18n="challengeAccept">도전 수락 ▶</button>
+                <button class="challenge-sheet-btn-cancel" onclick="closeChallengeSheet()" data-i18n="giveUpCancel">취소</button>
             </div>
         </div>
     </div>
@@ -551,8 +551,9 @@
         const LANG_LABELS = {
             ko: '한국어', en: 'English', de: 'Deutsch',
             fr: 'Français', ja: '日本語',
+            es: 'Español', pt: 'Português', it: 'Italiano',
         };
-        const DEVICE_LANG_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        const DEVICE_LANG_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja', es: 'es', pt: 'pt', it: 'it' };
         const deviceCode = (navigator.language || 'ko').split('-')[0].toLowerCase();
         let selectedLang = DEVICE_LANG_MAP[deviceCode] || 'ko';
 
@@ -585,13 +586,14 @@
         });
 
         /* ── 게임 위키 선택 (별도 — UI 언어와 무관) ─── */
-        const DEVICE_WIKI_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja' };
+        const DEVICE_WIKI_MAP = { ko: 'ko', en: 'en', de: 'de', fr: 'fr', ja: 'ja', es: 'es', pt: 'pt', it: 'it' };
         let selectedWiki = DEVICE_WIKI_MAP[deviceCode] || 'ko';
 
         const WIKI_BADGE_LABELS = {
             ko: '위키백과',
             en: 'Wikipedia (EN)', de: 'Wikipedia (DE)',
             fr: 'Wikipédia (FR)', ja: 'ウィキペディア',
+            es: 'Wikipedia (ES)', pt: 'Wikipédia (PT)', it: 'Wikipedia (IT)',
         };
 
         function setWiki(wiki) {

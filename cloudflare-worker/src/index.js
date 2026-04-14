@@ -2,7 +2,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    const token = url.searchParams.get('token');
+    // 토큰은 Authorization 헤더 우선, 폴백으로 쿼리 파라미터도 허용 (하위 호환)
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '') || url.searchParams.get('token');
     if (token !== env.SECRET_TOKEN) {
       return new Response('Unauthorized', { status: 401 });
     }

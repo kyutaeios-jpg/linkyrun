@@ -3,14 +3,14 @@ import re
 import json
 import difflib
 import random
-import string
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
-from html import escape as html_escape
+from datetime import datetime, timezone
+_UTC = timezone.utc
 from flask import Flask, render_template, request, jsonify, send_from_directory, redirect
 from urllib.parse import quote, unquote
 
+import collections
 import threading
 import time as _time
 
@@ -26,7 +26,7 @@ except ImportError:
         _USE_CURL_CFFI = False
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'namu-speedrun-secret-key-2024')
+app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(32).hex()
 
 @app.route('/favicon.ico')
 def favicon():
@@ -89,7 +89,7 @@ def _db_conn():
         with sqlite3.connect(DB_PATH) as conn:
             yield conn
 
-def _ph(n=1):
+def _ph():
     """플레이스홀더: PostgreSQL=%s, SQLite=?"""
     return '%s' if _USE_PG else '?'
 
@@ -711,11 +711,53 @@ def init_db():
         except Exception:
             pass
 
-def _gen_challenge_code(length=6):
-    chars = string.ascii_letters + string.digits
-    return ''.join(random.choices(chars, k=length))
+import secrets as _secrets
 
-init_db()
+def _gen_challenge_code(length=6):
+    return _secrets.token_urlsafe(length)[:length]
+
+_db_initialized = False
+_db_init_lock = threading.Lock()
+
+
+@app.before_request
+def _ensure_db():
+    global _db_initialized
+    if not _db_initialized:
+        with _db_init_lock:
+            if not _db_initialized:
+                init_db()
+                _db_initialized = True
+
+
+# ── Rate Limiter ─────────────────────────────────────────────
+# IP별 요청 타임스탬프를 추적하여 짧은 시간 내 과도한 POST 차단
+
+_rate_lock = threading.Lock()
+_rate_buckets: dict = {}  # {ip: deque of timestamps}
+RATE_LIMIT_WINDOW = 60    # 초
+RATE_LIMIT_MAX    = 10    # 윈도우 내 최대 요청 수
+
+
+def _is_rate_limited(ip: str) -> bool:
+    now = _time.time()
+    with _rate_lock:
+        if ip not in _rate_buckets:
+            _rate_buckets[ip] = collections.deque()
+        bucket = _rate_buckets[ip]
+        # 윈도우 밖의 오래된 항목 제거
+        while bucket and bucket[0] < now - RATE_LIMIT_WINDOW:
+            bucket.popleft()
+        if len(bucket) >= RATE_LIMIT_MAX:
+            return True
+        bucket.append(now)
+        # 메모리 관리: 버킷 수가 너무 많으면 오래된 IP 정리
+        if len(_rate_buckets) > 10000:
+            cutoff = now - RATE_LIMIT_WINDOW * 2
+            stale = [k for k, v in _rate_buckets.items() if not v or v[-1] < cutoff]
+            for k in stale:
+                del _rate_buckets[k]
+    return False
 
 
 # ── Playwright 전용 스레드 + 작업 큐 ──────────────────────────
@@ -727,7 +769,24 @@ import queue as _queue_mod
 _pw_task_queue: '_queue_mod.Queue' = _queue_mod.Queue()
 _links_cache: dict = {}   # {title: (links, timestamp)}
 _html_cache:  dict = {}   # {title: (html,  timestamp)}
+_cache_lock = threading.Lock()
 CACHE_TTL = 600           # 10분
+CACHE_MAX_SIZE = 500      # 캐시 항목 최대 수
+
+
+def _evict_cache(cache: dict, max_size: int = CACHE_MAX_SIZE):
+    """TTL 만료 항목 제거 + 최대 크기 초과 시 가장 오래된 항목 삭제."""
+    now = _time.time()
+    with _cache_lock:
+        # TTL 만료 제거 (list() 스냅샷으로 순회 중 변경 방지)
+        expired = [k for k, (_, ts) in list(cache.items()) if now - ts >= CACHE_TTL]
+        for k in expired:
+            cache.pop(k, None)
+        # 최대 크기 초과 시 가장 오래된 것부터 제거
+        if len(cache) > max_size:
+            sorted_keys = sorted(cache, key=lambda k: cache[k][1])
+            for k in sorted_keys[:len(cache) - max_size]:
+                cache.pop(k, None)
 
 
 def _call_pw(func, timeout: int = 70):
@@ -887,10 +946,12 @@ threading.Thread(target=_playwright_thread, daemon=True).start()
 
 
 def _warmup_loop():
-    """8분마다 CF 클리어런스를 갱신한다."""
+    """8분마다 CF 클리어런스를 갱신하고, 캐시를 정리한다."""
     while True:
         _time.sleep(480)
-        print('[Warmup-loop] 정기 재워밍업…', flush=True)
+        _evict_cache(_html_cache)
+        _evict_cache(_links_cache)
+        print('[Warmup-loop] 정기 재워밍업 + 캐시 정리…', flush=True)
         def _task(ctx):
             _do_warmup(ctx)
         _call_pw(_task, timeout=90)
@@ -899,21 +960,26 @@ threading.Thread(target=_warmup_loop, daemon=True).start()
 
 
 WORKER_URL   = os.environ.get('WORKER_URL', 'https://linkyrun-proxy.linkyrun.workers.dev/')
-WORKER_TOKEN = os.environ.get('WORKER_TOKEN', 'linkyrun-worker-secret-2024')
+WORKER_TOKEN = os.environ.get('WORKER_TOKEN', '')
 
 # 리다이렉트 맵: redirect_title → canonical_title (예: '안철수' → '안철수 (정치인)')
-_redirect_map: dict = {}
+_redirect_map: 'collections.OrderedDict' = collections.OrderedDict()
+_REDIRECT_MAP_MAX = 5000
 # 리다이렉트 여부를 확인한 페이지 목록 (재확인 방지)
-_redirect_checked: set = set()
+_redirect_checked: 'collections.OrderedDict' = collections.OrderedDict()
+_REDIRECT_CHECKED_MAX = 2000
 
 
 def _worker_fetch_namu(title: str):
     """Cloudflare Worker를 통해 namu.wiki 페이지 HTML 반환."""
     import urllib.request, urllib.parse
-    params = urllib.parse.urlencode({'token': WORKER_TOKEN, 'title': title})
+    params = urllib.parse.urlencode({'title': title})
     url = WORKER_URL + '?' + params
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'LinkyRun/1.0'})
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'LinkyRun/1.0',
+            'Authorization': f'Bearer {WORKER_TOKEN}',
+        })
         with urllib.request.urlopen(req, timeout=20) as r:
             html = r.read().decode('utf-8', errors='replace')
             status = r.status
@@ -930,6 +996,8 @@ def _worker_fetch_namu(title: str):
                 canonical = unquote(final_url[len(_namu_prefix):].split('?')[0].split('#')[0])
                 if canonical and canonical != title:
                     _redirect_map[title] = canonical
+                    if len(_redirect_map) > _REDIRECT_MAP_MAX:
+                        _redirect_map.popitem(last=False)
                     print(f'[Worker:namu] 리다이렉트 감지: {title!r} → {canonical!r}', flush=True)
             return html
     except Exception as e:
@@ -973,6 +1041,10 @@ def build_proxy_html(wiki_html: str, title: str, goal: str, wiki: str = 'namu', 
 
     # 1. 스크립트 제거
     html = re.sub(r'<script\b[^>]*>[\s\S]*?</script>', '', wiki_html)
+
+    # 1-b. 인라인 이벤트 핸들러 제거 (on* 속성 — XSS 방어)
+    html = re.sub(r'\s+on\w+\s*=\s*"[^"]*"', '', html)
+    html = re.sub(r"\s+on\w+\s*=\s*'[^']*'", '', html)
 
     # 위키별 CSS를 <head>에 주입 (존재할 때만)
     if wiki == 'namu' and '</head>' in html:
@@ -1142,7 +1214,7 @@ const PAGE_TITLE = {t_json};
 const GOAL       = {g_json};
 const IS_GOAL    = {ig_json};
 const WIKI       = {w_json};
-window._WIKI = {{'namu':'namu','ko':'namu','en':'en','de':'de','fr':'fr','ja':'ja'}}[WIKI] || 'namu';
+window._WIKI = {{'namu':'namu','ko':'namu','en':'en','de':'de','fr':'fr','ja':'ja','es':'es','pt':'pt','it':'it'}}[WIKI] || 'namu';
 applyI18n();
 </script>
 <script src="/static/js/proxy.js?v={_APP_VER}"></script>
@@ -1156,112 +1228,8 @@ applyI18n();
     return html
 
 
-def _nm_inline(text: str, goal_enc: str) -> str:
-    """namumark 인라인 마크업 → HTML (링크 위주)."""
-    saved: list = []
 
-    def save_link(m):
-        inner = m.group(1)
-        parts = inner.split('|', 1)
-        raw   = parts[0].split('#')[0].strip()
-        disp  = (parts[1].strip() if len(parts) > 1 else raw)
-        idx   = len(saved)
-        if not raw or any(raw.startswith(p) for p in EXCLUDED_PREFIXES):
-            saved.append(html_escape(disp))
-        elif raw.startswith(('http://', 'https://')):
-            saved.append(
-                f'<a href="{html_escape(raw)}" class="ext-link" target="_blank" rel="noopener">'
-                f'{html_escape(disp)}</a>'
-            )
-        else:
-            saved.append(
-                f'<a href="/page/{quote(raw, safe="")}?goal={goal_enc}" class="wiki-link">'
-                f'{html_escape(disp)}</a>'
-            )
-        return f'\x00{idx}\x00'
-
-    text = re.sub(r'\[\[([^\[\]]+)\]\]', save_link, text)
-    text = html_escape(text)                       # 나머지 텍스트 안전하게 이스케이프
-    text = re.sub(r"'''(.+?)'''", r'<strong>\1</strong>', text)
-    text = re.sub(r"''(.+?)''",   r'<em>\1</em>',        text)
-    text = re.sub(r'~~(.+?)~~',   r'<s>\1</s>',          text)
-    text = re.sub(r'__(.+?)__',   r'<u>\1</u>',          text)
-
-    for idx, html in enumerate(saved):
-        text = text.replace(f'\x00{idx}\x00', html)
-
-    text = re.sub(r'\{\{\{.*?\}\}\}', '', text)
-    text = re.sub(r'\{[^}\n]{0,60}\}', '', text)
-    return text
-
-
-def render_namumark(content: str, title: str, goal: str) -> str:
-    """namumark 원문 → 게임용 HTML. curl_cffi로 /raw/ 에서 받은 텍스트를 변환."""
-    goal_enc = quote(goal, safe='')
-
-    # 코드 블록 / 표 등 복잡한 블록은 제거
-    content = re.sub(r'\{\{\{.*?\}\}\}', '', content, flags=re.DOTALL)
-
-    lines      = content.split('\n')
-    out        = []
-    in_list    = None
-
-    for line in lines:
-        # 제목 (== 제목 ==)
-        m = re.match(r'^(={1,6})\s*(.+?)\s*\1\s*$', line)
-        if m:
-            if in_list: out.append(f'</{in_list}>'); in_list = None
-            level = min(len(m.group(1)) + 1, 6)   # h2 ~ h6
-            out.append(f'<h{level}>{_nm_inline(m.group(2), goal_enc)}</h{level}>')
-            continue
-
-        # 수평선
-        if re.match(r'^-{4,}\s*$', line):
-            if in_list: out.append(f'</{in_list}>'); in_list = None
-            out.append('<hr>')
-            continue
-
-        # 비순서 목록
-        m = re.match(r'^\s*\*\s+(.+)$', line)
-        if m:
-            if in_list != 'ul':
-                if in_list: out.append(f'</{in_list}>')
-                out.append('<ul>'); in_list = 'ul'
-            out.append(f'<li>{_nm_inline(m.group(1), goal_enc)}</li>')
-            continue
-
-        # 순서 목록
-        m = re.match(r'^\s*\d+\.\s+(.+)$', line)
-        if m:
-            if in_list != 'ol':
-                if in_list: out.append(f'</{in_list}>')
-                out.append('<ol>'); in_list = 'ol'
-            out.append(f'<li>{_nm_inline(m.group(1), goal_enc)}</li>')
-            continue
-
-        # 목록 종료
-        if in_list:
-            out.append(f'</{in_list}>'); in_list = None
-
-        # 인용
-        m = re.match(r'^>+\s*(.*)$', line)
-        if m:
-            inner = m.group(1).strip()
-            out.append(f'<blockquote>{_nm_inline(inner, goal_enc) if inner else "&nbsp;"}</blockquote>')
-            continue
-
-        # 빈 줄
-        if not line.strip():
-            out.append('')
-            continue
-
-        # 일반 텍스트
-        out.append(f'<p>{_nm_inline(line, goal_enc)}</p>')
-
-    if in_list:
-        out.append(f'</{in_list}>')
-
-    return '\n'.join(out)
+# (레거시 _nm_inline, render_namumark 삭제됨 — HTML 프록시 방식으로 대체)
 
 
 def get_wikipedia_html(title: str, wiki: str) -> str:
@@ -1346,15 +1314,9 @@ def get_page_links(title: str):
     return _call_pw(_fetch)
 
 
-# ── 레거시 scraper (데스크탑 wiki_fetcher 폴백용) ──────────────
+# ── 레거시 wiki_fetcher (데스크탑 앱 폴백용, 현재 미사용이나 참조 보존) ──
 
 _wiki_fetcher = None
-
-
-def set_wiki_fetcher(fetcher):
-    global _wiki_fetcher
-    _wiki_fetcher = fetcher
-
 
 _MOBILE_UA = (
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
@@ -1424,8 +1386,11 @@ def get_backlink_count(title: str):
     """나무위키 역링크 수 반환. Worker API 경유. 실패하면 None."""
     import urllib.request as _ureq, urllib.parse as _uparse
     try:
-        params = _uparse.urlencode({'token': WORKER_TOKEN, 'type': 'backlink', 'title': title})
-        req = _ureq.Request(WORKER_URL + '?' + params, headers={'User-Agent': 'LinkyRun/1.0'})
+        params = _uparse.urlencode({'type': 'backlink', 'title': title})
+        req = _ureq.Request(WORKER_URL + '?' + params, headers={
+            'User-Agent': 'LinkyRun/1.0',
+            'Authorization': f'Bearer {WORKER_TOKEN}',
+        })
         with _ureq.urlopen(req, timeout=10) as r:
             text = r.read().decode('utf-8', errors='replace')
         # namu.wiki backlink API JSON: {"totalCount": N, ...}
@@ -1485,17 +1450,7 @@ def classify_difficulty_for_wiki(count, wiki: str):
     return 'medium', '보통', '#fdcb6e'
 
 
-def classify_difficulty(count, title: str):
-    """역링크 수(또는 휴리스틱)로 난이도 분류."""
-    if count is not None:
-        for threshold, key, label, color in DIFFICULTY_THRESHOLDS:
-            if count >= threshold:
-                return key, label, color
-        return 'very_hard', '매우 어려움', '#d63031'
-    # Cloudflare 차단 시 휴리스틱 폴백
-    if title in POPULAR_PAGES:
-        return 'easy', '쉬움', '#00b894'
-    return 'medium', '보통', '#fdcb6e'
+# (레거시 classify_difficulty 삭제됨 — classify_difficulty_for_wiki로 대체)
 
 
 # ── 링크 파싱 ─────────────────────────────────────────────────
@@ -1595,10 +1550,10 @@ def page(title):
             st, sg = _strip_paren(nt), _strip_paren(ng)
             if st and sg and st == sg:
                 return True
-            # Layer 4: 유사도 매칭 (0.88 이상, 양쪽 모두 4자 이상)
-            if len(nt) >= 4 and len(ng) >= 4:
+            # Layer 4: 유사도 매칭 (0.92 이상, 양쪽 모두 6자 이상 — 오탐 방지)
+            if len(nt) >= 6 and len(ng) >= 6:
                 ratio = difflib.SequenceMatcher(None, nt, ng).ratio()
-                if ratio >= 0.88:
+                if ratio >= 0.92:
                     return True
             return False
 
@@ -1607,7 +1562,9 @@ def page(title):
             # 지연 리다이렉트 확인: goal 페이지가 아직 미확인이면 Worker로 리다이렉트 여부 확인
             # (예: goal='서울' redirect→'서울특별시', player가 '서울특별시'에 도달했을 때)
             if not is_goal and wiki == 'namu' and goal not in _redirect_checked:
-                _redirect_checked.add(goal)
+                _redirect_checked[goal] = True
+                if len(_redirect_checked) > _REDIRECT_CHECKED_MAX:
+                    _redirect_checked.popitem(last=False)
                 _worker_fetch_namu(goal)  # _redirect_map[goal] 갱신 가능
                 is_goal = _is_goal_match(title, goal)
                 if is_goal:
@@ -1617,11 +1574,14 @@ def page(title):
         else:
             is_goal = False
         proxy_html = build_proxy_html(wiki_html, title, goal, wiki, is_goal=is_goal)
-        return proxy_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
+        return proxy_html, 200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Security-Policy': "frame-ancestors 'none'; object-src 'none'",
+        }
 
     # 폴백: 나무위키만 링크 목록 UI 제공
     is_goal = bool(goal) and title.strip() == goal.strip()
-    links = get_page_links(title) or [] if wiki == 'namu' else []
+    links = (get_page_links(title) or []) if wiki == 'namu' else []
     error = not links
     status = 404 if error else 200
     cfg = WIKI_CONFIGS.get(wiki, WIKI_CONFIGS['namu'])
@@ -1649,7 +1609,10 @@ def api_links(title):
 
 @app.route('/api/random')
 def api_random():
-    count = min(int(request.args.get('count', 5)), 20)
+    try:
+        count = min(int(request.args.get('count', 5)), 20)
+    except (ValueError, TypeError):
+        count = 5
     pages = random.sample(POPULAR_PAGES, min(count, len(POPULAR_PAGES)))
     return jsonify({'pages': pages})
 
@@ -1671,8 +1634,11 @@ def _fetch_random_wiki_title(wiki: str):
     import urllib.request as _ureq, urllib.parse as _uparse
     try:
         if wiki == 'namu':
-            params = _uparse.urlencode({'token': WORKER_TOKEN, 'type': 'random'})
-            req = _ureq.Request(WORKER_URL + '?' + params, headers={'User-Agent': 'LinkyRun/1.0'})
+            params = _uparse.urlencode({'type': 'random'})
+            req = _ureq.Request(WORKER_URL + '?' + params, headers={
+                'User-Agent': 'LinkyRun/1.0',
+                'Authorization': f'Bearer {WORKER_TOKEN}',
+            })
             with _ureq.urlopen(req, timeout=15) as r:
                 final_url = r.headers.get('X-Namu-Url', '')
                 prefix = 'https://namu.wiki/w/'
@@ -1767,8 +1733,8 @@ def api_random_game():
 def api_daily():
     import hashlib
     wiki = request.args.get('wiki', 'namu')
-    today = datetime.utcnow().strftime('%Y-%m-%d')
-    day_num = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+    today = datetime.now(_UTC).strftime('%Y-%m-%d')
+    day_num = (datetime.now(_UTC) - datetime(2024, 1, 1, tzinfo=_UTC)).days + 1
 
     if wiki == 'namu':
         pool = POPULAR_PAGES
@@ -1817,10 +1783,23 @@ def api_difficulty(title):
 @app.route('/api/ranking', methods=['GET', 'POST'])
 def api_ranking():
     if request.method == 'POST':
+        if _is_rate_limited(request.remote_addr or ''):
+            return jsonify({'error': 'too many requests'}), 429
         data = request.get_json(silent=True) or {}
         nickname = str(data.get('nickname', '')).strip()[:20]
         if not nickname:
             return jsonify({'error': 'nickname required'}), 400
+
+        try:
+            elapsed_ms = int(data.get('elapsed_ms', 0))
+            hops_val = int(data.get('hops', 0))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'invalid params'}), 400
+        # 기본 검증: 시간/홉이 음수이거나 비현실적이면 거부
+        if elapsed_ms < 500 or elapsed_ms > 7_200_000:
+            return jsonify({'error': 'invalid elapsed_ms'}), 400
+        if hops_val < 1 or hops_val > 500:
+            return jsonify({'error': 'invalid hops'}), 400
 
         wiki_val = str(data.get('wiki', 'namu'))
         difficulty_val = str(data.get('difficulty', 'unknown'))
@@ -1829,7 +1808,7 @@ def api_ranking():
         if difficulty_val == 'daily':
             day_num_val = data.get('day_num')
             if day_num_val is None:
-                day_num_val = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+                day_num_val = (datetime.now(_UTC) - datetime(2024, 1, 1, tzinfo=_UTC)).days + 1
             day_num_val = int(day_num_val)
 
         ph = _ph()
@@ -1844,12 +1823,12 @@ def api_ranking():
         params = (nickname,
                   str(data.get('start', '')),
                   str(data.get('goal', '')),
-                  int(data.get('elapsed_ms', 0)),
-                  int(data.get('hops', 0)),
+                  elapsed_ms,
+                  hops_val,
                   json.dumps(data.get('path', [])),
                   difficulty_val,
                   wiki_val,
-                  datetime.utcnow().isoformat(),
+                  datetime.now(_UTC).isoformat(),
                   day_num_val)
         with _db_conn() as conn:
             cur = _execute(conn, insert_sql, params)
@@ -1863,7 +1842,10 @@ def api_ranking():
     # GET
     difficulty = request.args.get('difficulty', '').strip()
     wiki_filter = request.args.get('wiki', '').strip()
-    limit = min(int(request.args.get('limit', 20)), 50)
+    try:
+        limit = min(int(request.args.get('limit', 20)), 50)
+    except (ValueError, TypeError):
+        limit = 20
 
     ph = _ph()
     with _db_conn() as conn:
@@ -1877,7 +1859,7 @@ def api_ranking():
             params.append(wiki_filter)
         # 데일리 랭킹: 오늘의 day_num으로 필터링 (매일 초기화)
         if difficulty == 'daily':
-            today_day_num = (datetime.utcnow() - datetime(2024, 1, 1)).days + 1
+            today_day_num = (datetime.now(_UTC) - datetime(2024, 1, 1, tzinfo=_UTC)).days + 1
             conditions.append(f'day_num = {ph}')
             params.append(today_day_num)
         where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
@@ -1903,6 +1885,8 @@ def api_ranking():
 @app.route('/api/challenge', methods=['POST'])
 def api_challenge_create():
     """도전장 단축 코드 생성."""
+    if _is_rate_limited(request.remote_addr or ''):
+        return jsonify({'error': 'too many requests'}), 429
     data = request.get_json(silent=True) or {}
     start = (data.get('start') or '').strip()
     goal  = (data.get('goal')  or '').strip()
@@ -1912,16 +1896,16 @@ def api_challenge_create():
     if not start or not goal:
         return jsonify({'error': 'missing params'}), 400
     # 중복 코드 방지를 위해 최대 5회 시도
+    ph = _ph()
+    insert_sql = f'''INSERT INTO challenge_links
+        (code, start_page, goal_page, wiki, hops, ms, created_at)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})'''
     for _ in range(5):
         code = _gen_challenge_code(6)
         try:
             with _db_conn() as conn:
-                _execute(conn, '''INSERT INTO challenge_links
-                    (code, start_page, goal_page, wiki, hops, ms, created_at)
-                    VALUES (?,?,?,?,?,?,?)''' if not _USE_PG else '''INSERT INTO challenge_links
-                    (code, start_page, goal_page, wiki, hops, ms, created_at)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s)''',
-                    (code, start, goal, wiki, hops, ms, datetime.utcnow().isoformat()))
+                _execute(conn, insert_sql,
+                    (code, start, goal, wiki, hops, ms, datetime.now(_UTC).isoformat()))
             return jsonify({'code': code})
         except Exception:
             continue
@@ -1931,10 +1915,11 @@ def api_challenge_create():
 @app.route('/api/challenge/<code>')
 def api_challenge_get(code):
     """도전장 코드로 파라미터 조회."""
+    ph = _ph()
     with _db_conn() as conn:
-        row = _execute(conn, 'SELECT start_page, goal_page, wiki, hops, ms FROM challenge_links WHERE code=?' if not _USE_PG
-                       else 'SELECT start_page, goal_page, wiki, hops, ms FROM challenge_links WHERE code=%s',
-                       (code,)).fetchone()
+        row = _execute(conn,
+            f'SELECT start_page, goal_page, wiki, hops, ms FROM challenge_links WHERE code={ph}',
+            (code,)).fetchone()
     if not row:
         return jsonify({'error': 'not found'}), 404
     return jsonify({'start': row[0], 'goal': row[1], 'wiki': row[2], 'hops': row[3], 'ms': row[4]})
@@ -1943,6 +1928,9 @@ def api_challenge_get(code):
 @app.route('/go/<code>')
 def go_smart_link(code):
     """스마트 링크: Android→앱/스토어, iOS·기타→웹으로 분기."""
+    # 코드 형식 검증 (영숫자 6자)
+    if not code or len(code) > 20 or not code.isalnum():
+        return jsonify({'error': 'invalid code'}), 400
     ua = request.headers.get('User-Agent', '').lower()
     web_url = f'https://linkyrun.com/?c={code}'
     if 'android' in ua:
@@ -1969,14 +1957,12 @@ def api_health():
     except Exception as e:
         status['db_error'] = str(e)
 
+    # Playwright 상태: 전용 스레드가 큐를 소비 중인지 간단히 확인
     try:
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            b = p.chromium.launch(headless=True, args=['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--single-process'])
-            page = b.new_page()
-            page.goto('about:blank')
-            b.close()
-        status['playwright'] = True
+        def _ping(ctx):
+            return True
+        result = _call_pw(_ping, timeout=10)
+        status['playwright'] = bool(result)
     except Exception as e:
         status['playwright_error'] = str(e)
 

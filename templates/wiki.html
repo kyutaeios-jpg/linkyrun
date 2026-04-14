@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/hud.css">
+    <link rel="stylesheet" href="/static/css/hud.css?v={{ ver }}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { font-size: 16px; }
@@ -164,6 +164,6 @@ const PAGE_TITLE = {{ title | tojson }};
 const GOAL       = {{ goal  | tojson }};
 const IS_GOAL    = {{ is_goal | tojson }};
 </script>
-<script src="/static/js/proxy.js"></script>
+<script src="/static/js/proxy.js?v={{ ver }}"></script>
 </body>
 </html>
