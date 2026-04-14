@@ -605,6 +605,7 @@
             const badge = document.getElementById('wiki-badge');
             if (badge) badge.textContent = WIKI_BADGE_LABELS[wiki] || wiki;
             updateDatalist(wiki);
+            loadDailyChallenge(wiki);
         }
 
         document.querySelectorAll('.wiki-card').forEach(el => {
@@ -1035,8 +1036,8 @@
             // 챌린지 배너 감지
             detectChallengeBanner();
 
-            // 데일리 카드 로드 (나무위키만)
-            loadDailyChallenge('ko');
+            // 데일리 카드 로드 (선택된 위키 기준)
+            loadDailyChallenge(selectedWiki);
         });
     </script>
 
