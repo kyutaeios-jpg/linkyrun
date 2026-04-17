@@ -283,6 +283,50 @@
             font-size: 0.95rem; font-weight: 600;
             font-family: inherit; cursor: pointer;
         }
+        /* ── 홈 콘텐츠 섹션 (About / FAQ / Guide) ────────────── */
+        .content-section {
+            margin-top: 8px;
+            line-height: 1.7;
+            color: var(--text, #F0F4FF);
+        }
+        .content-section .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text, #F0F4FF);
+            text-transform: none;
+            letter-spacing: 0;
+            margin: 0 0 12px;
+        }
+        .content-section p {
+            font-size: 0.92rem;
+            color: var(--text, #F0F4FF);
+            margin: 0 0 10px;
+        }
+        .content-section p:last-child { margin-bottom: 0; }
+        .content-section strong { color: #FFB68A; font-weight: 700; }
+        .content-section em { color: var(--text-muted, #7B8FAD); font-style: normal; }
+        .content-section a { color: #FF8C5A; text-decoration: underline; }
+        .content-list {
+            margin: 0; padding-left: 20px;
+            font-size: 0.92rem;
+        }
+        .content-list li {
+            margin-bottom: 8px;
+        }
+        .content-list li:last-child { margin-bottom: 0; }
+        .faq-list { margin: 0; }
+        .faq-list dt {
+            font-weight: 700;
+            color: #FFB68A;
+            font-size: 0.95rem;
+            margin-top: 14px;
+        }
+        .faq-list dt:first-child { margin-top: 0; }
+        .faq-list dd {
+            margin: 6px 0 0;
+            font-size: 0.9rem;
+            color: var(--text, #F0F4FF);
+        }
     </style>
 </head>
 <body class="index-page">
@@ -360,6 +404,78 @@
                     <span data-i18n="btnRankingFull">🏆 랭킹 보기</span>
                 </button>
             </div>
+
+            <section class="card content-section" id="about-linkyrun">
+                <h2 class="section-title">링키런(Linky Run)이란?</h2>
+                <p>링키런은 위키백과의 내부 링크만을 이용해 출발 페이지에서 목표 페이지까지 최단 경로로 도달하는 온라인 스피드런 게임입니다. 단순히 검색창에 목표를 입력해 바로 이동하는 것이 아니라, 현재 페이지 본문에 걸린 <strong>파란색 링크</strong>만 따라가며 목표까지 가는 방식이라 지식의 연결 구조를 자연스럽게 체험할 수 있습니다.</p>
+                <p>예를 들어 <em>"고양이"</em>에서 출발해 <em>"블랙홀"</em>까지 가야 한다면, 고양이 페이지 안에서 관련 키워드(포유류 → 생물학 → 물리학 → 천체물리학 → 블랙홀)를 찾아 클릭하며 주제의 다리를 놓아야 합니다. 먼 주제를 얼마나 짧은 경로로 연결하는지가 이 게임의 핵심 재미이며, 플레이하다 보면 세상의 모든 지식이 의외로 가까이 연결되어 있다는 사실을 발견하게 됩니다.</p>
+            </section>
+
+            <section class="card content-section" id="how-to-play">
+                <h2 class="section-title">자세한 플레이 방법</h2>
+                <ol class="content-list">
+                    <li><strong>위키 선택</strong> — 한국어·영어·독일어·프랑스어·일본어·스페인어·포르투갈어·이탈리아어 위키백과 중 원하는 언어를 고르세요. 언어마다 문서 수와 링크 밀도가 달라 난이도와 재미가 조금씩 다릅니다.</li>
+                    <li><strong>난이도 선택 또는 직접 설정</strong> — 랜덤 모드에서는 난이도(쉬움·보통·어려움·매우 어려움)에 맞는 시작·목표 페이지가 자동으로 배정됩니다. 직접 설정 모드에서는 원하는 두 페이지를 직접 입력해 도전할 수 있습니다.</li>
+                    <li><strong>링크만 따라가기</strong> — 페이지 본문 안의 파란색 내부 링크만 클릭해서 이동하세요. 브라우저 뒤로 가기, 주소창 직접 입력, 검색, 외부 링크는 사용할 수 없습니다. 이 제약이 바로 게임의 핵심 규칙입니다.</li>
+                    <li><strong>목표 도달 & 기록 등록</strong> — 목표 페이지에 도착하면 경과 시간과 이동 횟수(홉 수)가 자동 기록됩니다. 닉네임을 입력해 글로벌 랭킹에 올리거나, 결과를 친구에게 공유 링크로 보낼 수 있습니다.</li>
+                </ol>
+            </section>
+
+            <section class="card content-section" id="difficulty-guide">
+                <h2 class="section-title">난이도별 가이드</h2>
+                <ul class="content-list">
+                    <li><strong>쉬움(Easy)</strong> — 시작·목표 페이지가 의미적으로 가까운 카테고리에서 추려집니다. 보통 2~4회 클릭이면 도달할 수 있어 규칙에 익숙해지기 좋은 단계입니다. 처음 플레이한다면 쉬움부터 시작해서 내부 링크를 찾는 감각을 익히세요.</li>
+                    <li><strong>보통(Medium)</strong> — 서로 다른 분야를 연결해야 하는 경우가 많습니다. 인물↔지역, 사건↔개념처럼 직접 링크가 걸려 있지 않지만 한두 단계만 우회하면 닿는 페어들이 주로 출제됩니다.</li>
+                    <li><strong>어려움(Hard)</strong> — 서로 관련 없어 보이는 두 주제가 짝지어집니다. "허브 페이지"(역사·국가·과학 등 링크가 많은 페이지)를 경유지로 활용하는 전략이 중요해집니다.</li>
+                    <li><strong>매우 어려움(Very Hard)</strong> — 경로가 전혀 보이지 않는 먼 주제 쌍입니다. 숙련자라면 공통 허브를 직감적으로 떠올릴 수 있지만, 일반적으로는 시행착오가 필요한 도전적 모드입니다.</li>
+                </ul>
+            </section>
+
+            <section class="card content-section" id="strategy-tips">
+                <h2 class="section-title">공략 팁과 전략</h2>
+                <ul class="content-list">
+                    <li><strong>허브 페이지를 노려라</strong> — 국가, 세기(20세기 등), 큰 학문 분야 페이지는 수백~수천 개의 링크를 가집니다. 목표가 멀게 느껴질 때 허브로 먼저 이동한 뒤 좁혀 들어가면 홉 수는 늘어도 탐색이 훨씬 빨라집니다.</li>
+                    <li><strong>상위 개념으로 올라가기</strong> — 구체적 항목에서 막혔다면 상위 분류(예: 특정 곤충 → 곤충 → 절지동물)로 올라가서 다른 가지로 내려오는 방식을 시도해 보세요.</li>
+                    <li><strong>첫 화면의 도입부를 먼저 읽기</strong> — 문서 앞부분에는 그 주제를 정의하는 가장 중요한 링크들이 모여 있습니다. 하단 "관련 항목"이나 외부 링크보다 본문 첫 단락을 먼저 훑는 것이 효율적입니다.</li>
+                    <li><strong>시간보다 방향성</strong> — 초보 단계에서는 빠른 클릭보다 "이 페이지에서 어떤 분야로 넘어갈 수 있는가"를 판단하는 연습이 더 중요합니다. 같은 목표라도 경로 선택에 따라 30초와 5분이 갈립니다.</li>
+                    <li><strong>모바일에서는 가로 스크롤 주의</strong> — 위키 표와 인포박스 안의 링크도 정상적으로 동작합니다. 놓치기 쉬우니 좌우 스크롤도 한 번씩 확인하세요.</li>
+                </ul>
+            </section>
+
+            <section class="card content-section" id="supported-wikis">
+                <h2 class="section-title">지원하는 위키 소개</h2>
+                <p>링키런은 세계 주요 언어권의 위키백과를 지원합니다. 각 위키는 문서 수, 링크 밀도, 문화적 주제 분포가 달라 같은 난이도라도 체감 난이도와 경로가 달라집니다.</p>
+                <ul class="content-list">
+                    <li><strong>🇰🇷 한국어 위키백과</strong> — 한국 문화·역사·인물 주제가 풍부하고, 영어판 대비 문서 길이가 짧아 링크가 더 빠르게 읽힙니다. 입문하기 좋은 선택입니다.</li>
+                    <li><strong>🇺🇸 English Wikipedia</strong> — 전 세계에서 가장 큰 위키백과로 문서 수가 압도적이며, 경로 다양성이 가장 높습니다. 영어 숙련자에게 추천합니다.</li>
+                    <li><strong>🇩🇪 Deutsch / 🇫🇷 Français</strong> — 유럽 역사와 철학 주제가 탄탄합니다. 학술적 링크 구조가 잘 정리되어 있습니다.</li>
+                    <li><strong>🇯🇵 日本語</strong> — 서브컬처·애니메이션·게임 관련 문서의 밀도가 매우 높습니다. 대중문화 주제로 놀기 좋습니다.</li>
+                    <li><strong>🇪🇸 Español / 🇵🇹 Português / 🇮🇹 Italiano</strong> — 라틴 문화권의 풍부한 예술·음악·스포츠 주제로 색다른 경험을 제공합니다.</li>
+                </ul>
+            </section>
+
+            <section class="card content-section" id="faq">
+                <h2 class="section-title">자주 묻는 질문 (FAQ)</h2>
+                <dl class="faq-list">
+                    <dt>검색창이나 뒤로 가기를 써도 되나요?</dt>
+                    <dd>안 됩니다. 게임 규칙상 <strong>현재 문서 본문 안의 내부 링크 클릭</strong>만 허용됩니다. 검색·주소창 입력·브라우저 뒤로 가기를 사용하면 정상 기록으로 인정되지 않습니다.</dd>
+
+                    <dt>경로가 존재하지 않으면 어떻게 되나요?</dt>
+                    <dd>링크 기반으로 생성된 페어라 이론적으로 경로가 존재합니다. 다만 특정 페이지(카테고리·틀·이미지 등)는 게임에서 제외되며, 만약 막다른 길에 도달하면 언제든 "포기"를 눌러 목표 페이지를 열람하거나 홈으로 돌아갈 수 있습니다.</dd>
+
+                    <dt>랭킹은 어떻게 정렬되나요?</dt>
+                    <dd>경과 시간(ms) 오름차순을 기본으로, 동점이면 이동 횟수(홉) 오름차순으로 정렬됩니다. 즉 빠르게 + 짧게 도달한 기록이 상위에 올라갑니다.</dd>
+
+                    <dt>모바일에서도 잘 되나요?</dt>
+                    <dd>네. 링키런은 모바일 웹을 우선 고려해 설계됐고, 홈 화면에 추가해 PWA(앱처럼 사용)로도 실행할 수 있습니다. iOS Safari와 Android Chrome에서 정상 동작합니다.</dd>
+
+                    <dt>내 기록은 어디에 저장되나요?</dt>
+                    <dd>글로벌 랭킹은 서버의 PostgreSQL 데이터베이스에 저장되며, 개인 통계(플레이 횟수·최단 기록 등)는 브라우저 로컬 스토리지에 저장됩니다. 자세한 내용은 <a href="/privacy">개인정보 처리방침</a>을 참고하세요.</dd>
+
+                    <dt>친구와 같은 경로로 대결할 수 있나요?</dt>
+                    <dd>가능합니다. 목표 달성 후 "공유" 버튼을 누르면 동일한 시작·목표 페이지로 진입하는 도전장 링크가 생성됩니다. 친구가 이 링크를 열면 곧바로 같은 조건의 게임이 시작됩니다.</dd>
+                </dl>
+            </section>
         </main>
     </div>
 
